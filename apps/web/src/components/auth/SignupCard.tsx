@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence, useMotionValue, useSpring } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useSpring, Variants } from "framer-motion";
 import { ArrowRight, Github, Lock, Loader2, Check, Mail, User } from "lucide-react";
 
 // Magnetic Button Component (Reused)
@@ -82,7 +82,7 @@ export function SignupCard() {
         setStatus("success");
     };
 
-    const containerVariants = {
+    const containerVariants: Variants = {
         hidden: { opacity: 0, scale: 0.95 },
         visible: {
             opacity: 1,
@@ -95,7 +95,7 @@ export function SignupCard() {
         }
     };
 
-    const itemVariants = {
+    const itemVariants: Variants = {
         hidden: { opacity: 0, y: 10 },
         visible: {
             opacity: 1,
