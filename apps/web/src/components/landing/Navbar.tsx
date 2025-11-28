@@ -26,7 +26,10 @@ export default function Navbar() {
                     </MagneticLink>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-6">
+                    <Link href="/login" className="text-xs font-medium tracking-widest uppercase text-zinc-400 hover:text-white transition-colors">
+                        Login
+                    </Link>
                     <Link href="/waitlist">
                         <Button size="sm" variant="primary">
                             Join Waitlist

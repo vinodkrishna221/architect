@@ -3,6 +3,19 @@
 @theme {
   --font-geist-sans: var(--font-geist-sans);
   --font-geist-mono: var(--font-geist-mono);
+
+  --animate-aurora: aurora 25s linear infinite;
+  --animate-aurora-reverse: aurora 25s linear infinite reverse;
+
+  @keyframes aurora {
+    from {
+      background-position: 50% 50%, 50% 50%;
+    }
+
+    to {
+      background-position: 350% 50%, 350% 50%;
+    }
+  }
 }
 
 :root {

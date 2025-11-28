@@ -8,19 +8,17 @@ import { GridBackground } from "./GridBackground";
 
 const TypewriterText = ({ text }: { text: string }) => {
     const [displayedText, setDisplayedText] = useState("");
+    const [index, setIndex] = useState(0);
 
     useEffect(() => {
-        let i = 0;
-        const timer = setInterval(() => {
-            if (i < text.length) {
-                setDisplayedText((prev) => prev + text.charAt(i));
-                i++;
-            } else {
-                clearInterval(timer);
-            }
-        }, 50);
-        return () => clearInterval(timer);
-    }, [text]);
+        if (index < text.length) {
+            const timer = setTimeout(() => {
+                setDisplayedText((prev) => prev + text.charAt(index));
+                setIndex(index + 1);
+            }, 50);
+            return () => clearTimeout(timer);
+        }
+    }, [index, text]);
 
     return (
         <span>
