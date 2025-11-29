@@ -2,9 +2,11 @@
 import { motion } from "framer-motion";
 import React from "react";
 
+import { cn } from "@/lib/utils";
+
 export const AuroraBackground = ({ children, className }: { children?: React.ReactNode; className?: string }) => {
     return (
-        <div className={`relative flex flex-col h-[100vh] items-center justify-center bg-black text-slate-950 transition-bg overflow-hidden ${className}`}>
+        <div className={cn("relative flex flex-col h-[100vh] items-center justify-center bg-black text-slate-950 transition-bg overflow-hidden", className)}>
             <div className="absolute inset-0 overflow-hidden">
                 <div
                     className="absolute -inset-[10px] opacity-50 will-change-transform blur-[60px] bg-[radial-gradient(circle_at_50%_50%,rgba(0,0,0,0)_0%,#000_100%)]"

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { ArrowRight, Check, Database, X } from "lucide-react";
 import { motion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
-import { GridBackground } from "./GridBackground";
+import { GridBackground } from "../shared/GridBackground";
 
 const TypewriterText = ({ text }: { text: string }) => {
     const [displayedText, setDisplayedText] = useState("");
