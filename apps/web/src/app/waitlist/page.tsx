@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { GridBackground } from "@components/shared/GridBackground.tsx";
+import { GridBackground } from "@/components/shared/GridBackground";
 import { Button } from "@/components/ui/Button";
 import { ArrowRight, Check, Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
