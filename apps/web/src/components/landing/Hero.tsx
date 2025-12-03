@@ -90,7 +90,7 @@ export default function Hero() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 1.2, delay: 0.4, ease: "easeOut" }}
                     >
-                        <Button variant="primary" className="h-12 px-8 text-lg rounded-lg group">
+                        <Button variant="default" className="h-12 px-8 text-lg rounded-lg group">
                             Interrogate My Idea
                             <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                         </Button>

@@ -1,34 +1,39 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { ArrowRight, Github, Lock, Loader2, Check } from "lucide-react";
+import { useState, useEffect, useActionState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight, Github, Lock, Loader2, Check, AlertCircle } from "lucide-react";
+import { authenticate } from "@/features/auth/actions";
 
 import { MagneticButton } from "../shared/MagneticButton";
 
 export function LoginCard() {
     const [email, setEmail] = useState("");
-    const [status, setStatus] = useState<"idle" | "valid" | "loading" | "success">("idle");
+    const [status, setStatus] = useState<"idle" | "valid" | "loading" | "success" | "error">("idle");
     const [isHovered, setIsHovered] = useState(false);
     const [shake, setShake] = useState(false);
 
+    const [state, dispatch, isPending] = useActionState(authenticate, undefined);
+
     // Validate email
     useEffect(() => {
-        if (status === "loading" || status === "success") return;
+        if (isPending || status === "success") return;
         const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
         setStatus(isValid ? "valid" : "idle");
-    }, [email, status]);
+    }, [email, isPending, status]);
 
-    const handleSubmit = async () => {
-        if (status !== "valid") {
-            setShake(true);
-            setTimeout(() => setShake(false), 500);
-            return;
+    // Handle server action state changes
+    useEffect(() => {
+        if (state) {
+            if (state === "Magic link sent! Check your email.") {
+                setStatus("success");
+            } else {
+                setStatus("error");
+                setShake(true);
+                setTimeout(() => setShake(false), 500);
+            }
         }
-        setStatus("loading");
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        setStatus("success");
-    };
+    }, [state]);
 
     const containerVariants = {
         hidden: { opacity: 0, scale: 0.95 },
@@ -77,76 +82,103 @@ export function LoginCard() {
                         <p className="text-zinc-400 text-sm">Enter your credentials to access the workspace.</p>
                     </motion.div>
 
-                    {/* Input */}
+                    {/* Input Form */}
                     <motion.div variants={itemVariants} className="w-full mb-6 relative group/input">
-                        <motion.div
-                            animate={shake ? { x: [-5, 5, -5, 5, 0] } : {}}
-                            transition={{ duration: 0.4 }}
-                            className="relative"
-                        >
-                            <input
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-                                placeholder="dev@architect.io"
-                                disabled={status === "loading" || status === "success"}
-                                className="w-full h-14 bg-zinc-900/50 border border-white/10 rounded-xl px-4 pr-14 
-                                         text-white placeholder:text-zinc-600 font-mono text-sm 
-                                         outline-none transition-all duration-300
-                                         focus:border-blue-500/50 focus:bg-zinc-900/80 focus:shadow-[0_0_30px_-5px_rgba(59,130,246,0.2)]"
-                            />
+                        <form action={dispatch}>
+                            <motion.div
+                                animate={shake ? { x: [-5, 5, -5, 5, 0] } : {}}
+                                transition={{ duration: 0.4 }}
+                                className="relative"
+                            >
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="dev@architect.io"
+                                    disabled={isPending || status === "success"}
+                                    className="w-full h-14 bg-zinc-900/50 border border-white/10 rounded-xl px-4 pr-14 
+                                             text-white placeholder:text-zinc-600 font-mono text-sm 
+                                             outline-none transition-all duration-300
+                                             focus:border-blue-500/50 focus:bg-zinc-900/80 focus:shadow-[0_0_30px_-5px_rgba(59,130,246,0.2)]"
+                                />
 
-                            {/* Smart Submit Button */}
-                            <div className="absolute right-2 top-2 bottom-2">
-                                <AnimatePresence mode="wait">
-                                    {status === "loading" ? (
-                                        <motion.div
-                                            key="loading"
-                                            initial={{ scale: 0.5, opacity: 0 }}
-                                            animate={{ scale: 1, opacity: 1 }}
-                                            exit={{ scale: 0.5, opacity: 0 }}
-                                            className="h-full aspect-square flex items-center justify-center"
-                                        >
-                                            <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
-                                        </motion.div>
-                                    ) : status === "success" ? (
-                                        <motion.div
-                                            key="success"
-                                            initial={{ scale: 0.5, opacity: 0 }}
-                                            animate={{ scale: 1, opacity: 1 }}
-                                            className="h-full aspect-square bg-green-500/20 rounded-lg flex items-center justify-center border border-green-500/50"
-                                        >
-                                            <Check className="w-5 h-5 text-green-500" />
-                                        </motion.div>
-                                    ) : (
-                                        <motion.button
-                                            key="arrow"
-                                            onClick={handleSubmit}
-                                            initial={{ opacity: 0 }}
-                                            animate={{
-                                                opacity: 1,
-                                                boxShadow: status === "valid" ? "0 0 15px rgba(59,130,246,0.5)" : "none",
-                                                scale: status === "valid" ? [1, 1.05, 1] : 1
-                                            }}
-                                            transition={status === "valid" ? {
-                                                boxShadow: { duration: 0.3 },
-                                                scale: { repeat: Infinity, duration: 1.5, ease: "easeInOut" } // Heartbeat pulse
-                                            } : {}}
-                                            whileHover={status === "valid" ? { scale: 1.1 } : {}}
-                                            whileTap={status === "valid" ? { scale: 0.95 } : {}}
-                                            disabled={status !== "valid"}
-                                            className={`h-full aspect-square rounded-lg flex items-center justify-center transition-colors duration-300 ${status === "valid"
-                                                ? "bg-blue-500 text-white cursor-pointer"
-                                                : "bg-zinc-800/50 text-zinc-600 cursor-not-allowed"
-                                                }`}
-                                        >
-                                            <ArrowRight className={`w-4 h-4 ${status === "valid" ? "translate-x-0" : "-translate-x-0.5"}`} />
-                                        </motion.button>
-                                    )}
-                                </AnimatePresence>
-                            </div>
-                        </motion.div>
+                                {/* Smart Submit Button */}
+                                <div className="absolute right-2 top-2 bottom-2">
+                                    <AnimatePresence mode="wait">
+                                        {isPending ? (
+                                            <motion.div
+                                                key="loading"
+                                                initial={{ scale: 0.5, opacity: 0 }}
+                                                animate={{ scale: 1, opacity: 1 }}
+                                                exit={{ scale: 0.5, opacity: 0 }}
+                                                className="h-full aspect-square flex items-center justify-center"
+                                            >
+                                                <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+                                            </motion.div>
+                                        ) : status === "success" ? (
+                                            <motion.div
+                                                key="success"
+                                                initial={{ scale: 0.5, opacity: 0 }}
+                                                animate={{ scale: 1, opacity: 1 }}
+                                                className="h-full aspect-square bg-green-500/20 rounded-lg flex items-center justify-center border border-green-500/50"
+                                            >
+                                                <Check className="w-5 h-5 text-green-500" />
+                                            </motion.div>
+                                        ) : (
+                                            <motion.button
+                                                key="arrow"
+                                                type="submit"
+                                                initial={{ opacity: 0 }}
+                                                animate={{
+                                                    opacity: 1,
+                                                    boxShadow: status === "valid" ? "0 0 15px rgba(59,130,246,0.5)" : "none",
+                                                    scale: status === "valid" ? [1, 1.05, 1] : 1
+                                                }}
+                                                transition={status === "valid" ? {
+                                                    boxShadow: { duration: 0.3 },
+                                                    scale: { repeat: Infinity, duration: 1.5, ease: "easeInOut" } // Heartbeat pulse
+                                                } : {}}
+                                                whileHover={status === "valid" ? { scale: 1.1 } : {}}
+                                                whileTap={status === "valid" ? { scale: 0.95 } : {}}
+                                                disabled={status !== "valid"}
+                                                className={`h-full aspect-square rounded-lg flex items-center justify-center transition-colors duration-300 ${status === "valid"
+                                                    ? "bg-blue-500 text-white cursor-pointer"
+                                                    : "bg-zinc-800/50 text-zinc-600 cursor-not-allowed"
+                                                    }`}
+                                            >
+                                                <ArrowRight className={`w-4 h-4 ${status === "valid" ? "translate-x-0" : "-translate-x-0.5"}`} />
+                                            </motion.button>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            </motion.div>
+                        </form>
+                        {/* Error Message */}
+                        <AnimatePresence>
+                            {state && status === "error" && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    className="absolute -bottom-8 left-0 right-0 flex items-center justify-center gap-2 text-red-500 text-xs font-medium"
+                                >
+                                    <AlertCircle className="w-3 h-3" />
+                                    <span>{state}</span>
+                                </motion.div>
+                            )}
+                            {state && status === "success" && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    className="absolute -bottom-8 left-0 right-0 flex items-center justify-center gap-2 text-green-500 text-xs font-medium"
+                                >
+                                    <Check className="w-3 h-3" />
+                                    <span>{state}</span>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </motion.div>
 
                     {/* Divider */}
