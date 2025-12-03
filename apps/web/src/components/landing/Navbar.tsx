@@ -31,7 +31,7 @@ export default function Navbar() {
                         Login
                     </Link>
                     <Link href="/waitlist">
-                        <Button size="sm" variant="primary">
+                        <Button size="sm" variant="default">
                             Join Waitlist
                         </Button>
                     </Link>

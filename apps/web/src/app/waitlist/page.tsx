@@ -111,7 +111,7 @@ export default function WaitlistPage() {
 
                             <Button
                                 type="submit"
-                                variant="primary"
+                                variant="default"
                                 className="w-full h-12 text-lg"
                                 disabled={status === "loading"}
                             >
