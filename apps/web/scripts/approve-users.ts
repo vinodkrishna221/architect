@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { Waitlist } from "../src/lib/models";
+import { sendEmail } from "./email-helper";
 import * as dotenv from "dotenv";
 
 dotenv.config({ path: ".env.local" });
@@ -37,10 +38,21 @@ async function approveUser(email: string) {
 
         console.log(`\nSUCCESS! User ${email} approved.`);
         console.log(`Access Code: ${accessCode}`);
-        console.log(`\n[MOCK EMAIL SENT]`);
-        console.log(`To: ${email}`);
-        console.log(`Subject: Welcome to Architect!`);
-        console.log(`Body: You have been approved. Your Access Code is: ${accessCode}`);
+        console.log(`\nSUCCESS! User ${email} approved.`);
+        console.log(`Access Code: ${accessCode}`);
+
+        await sendEmail({
+            to: email,
+            subject: "Welcome to Architect!",
+            text: `You have been approved. Your Access Code is: ${accessCode}`,
+            html: `
+                <h1>Welcome to Architect!</h1>
+                <p>You have been approved to join the platform.</p>
+                <p><strong>Your Access Code is: ${accessCode}</strong></p>
+                <p>Please keep this code safe. You will need it to log in.</p>
+                <p><a href="https://architect-web.vercel.app/login">Login Here</a></p>
+            `
+        });
 
     } catch (error) {
         console.error("Error approving user:", error);

@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { Waitlist, Changelog } from "../src/lib/models";
+import { sendEmail } from "./email-helper";
 import * as dotenv from "dotenv";
 import * as readline from "readline";
 
@@ -53,20 +54,31 @@ async function releaseUpdate() {
         console.log("\n--- Sending Notifications ---\n");
 
         for (const user of users) {
-            console.log(`[MOCK EMAIL] To: ${user.email}`);
-            console.log(`Subject: New Update: ${title}`);
-            console.log(`Body: Check out the new update ${version}! View full changelog at /changelog`);
-            console.log("-----------------------------------");
+            for (const user of users) {
+                await sendEmail({
+                    to: user.email!,
+                    subject: `New Update: ${title}`,
+                    text: `Check out the new update ${version}! View full changelog at /changelog`,
+                    html: `
+                    <h1>New Update: ${title}</h1>
+                    <p><strong>Version: ${version}</strong></p>
+                    <p>We've just released a new update!</p>
+                    <div style="background: #f4f4f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                        ${content}
+                    </div>
+                    <p><a href="https://architect-web.vercel.app/changelog">View Full Changelog</a></p>
+                `
+                });
+            }
+
+            console.log("\nRelease process completed successfully!");
+
+        } catch (error) {
+            console.error("Error creating release:", error);
+        } finally {
+            await mongoose.disconnect();
+            rl.close();
         }
-
-        console.log("\nRelease process completed successfully!");
-
-    } catch (error) {
-        console.error("Error creating release:", error);
-    } finally {
-        await mongoose.disconnect();
-        rl.close();
     }
-}
 
 releaseUpdate();

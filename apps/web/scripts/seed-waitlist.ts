@@ -16,7 +16,7 @@ async function seed() {
         await mongoose.connect(MONGODB_URI!);
         console.log("Connected to MongoDB");
 
-        const email = "ancemodernfacts@gmail.com"; // Default test email
+        const email = "cinetechp@gmail.com"; // Default test email
 
         // Check if exists
         const existing = await Waitlist.findOne({ email });
