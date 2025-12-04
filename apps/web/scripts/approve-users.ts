@@ -50,7 +50,7 @@ async function approveUser(email: string) {
                 <p>You have been approved to join the platform.</p>
                 <p><strong>Your Access Code is: ${accessCode}</strong></p>
                 <p>Please keep this code safe. You will need it to log in.</p>
-                <p><a href="https://architect-web.vercel.app/login">Login Here</a></p>
+                <p><a href="https://the-architect-demo.vercel.app/login">Login Here</a></p>
             `
         });
 
