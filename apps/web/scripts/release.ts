@@ -54,12 +54,11 @@ async function releaseUpdate() {
         console.log("\n--- Sending Notifications ---\n");
 
         for (const user of users) {
-            for (const user of users) {
-                await sendEmail({
-                    to: user.email!,
-                    subject: `New Update: ${title}`,
-                    text: `Check out the new update ${version}! View full changelog at /changelog`,
-                    html: `
+            await sendEmail({
+                to: user.email!,
+                subject: `New Update: ${title}`,
+                text: `Check out the new update ${version}! View full changelog at /changelog`,
+                html: `
                     <h1>New Update: ${title}</h1>
                     <p><strong>Version: ${version}</strong></p>
                     <p>We've just released a new update!</p>
@@ -68,17 +67,18 @@ async function releaseUpdate() {
                     </div>
                     <p><a href="https://architect-web.vercel.app/changelog">View Full Changelog</a></p>
                 `
-                });
-            }
-
-            console.log("\nRelease process completed successfully!");
-
-        } catch (error) {
-            console.error("Error creating release:", error);
-        } finally {
-            await mongoose.disconnect();
-            rl.close();
+            });
+            console.log(`  ✅ Notified: ${user.email}`);
         }
+
+        console.log("\nRelease process completed successfully!");
+
+    } catch (error) {
+        console.error("Error creating release:", error);
+    } finally {
+        await mongoose.disconnect();
+        rl.close();
     }
+}
 
 releaseUpdate();

@@ -1,4 +1,5 @@
 import NextAuth from "next-auth";
+import bcrypt from "bcryptjs";
 import { MongoDBAdapter } from "@auth/mongodb-adapter";
 import clientPromise from "@/lib/mongodb";
 import { authConfig } from "./auth.config";
@@ -28,7 +29,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
                     if (waitlistEntry && waitlistEntry.status === "APPROVED") {
                         // Verify Access Code
-                        if (waitlistEntry.accessCode === accessCode) {
+                        const isValid = await bcrypt.compare(accessCode, waitlistEntry.accessCode || "");
+                        if (isValid) {
                             return {
                                 id: waitlistEntry._id.toString(),
                                 email: waitlistEntry.email,
@@ -47,10 +49,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     callbacks: {
         ...authConfig.callbacks,
         async signIn({ user }) {
-            console.log("[Auth] SignIn Callback Started", { email: user.email });
+            if (process.env.NODE_ENV === "development") {
+                console.log("[Auth] SignIn Callback Started", { email: user.email });
+            }
             // 1. Check if user exists in Waitlist
             if (!user.email) {
-                console.log("[Auth] No email provided");
+                // console.log("[Auth] No email provided");
                 return false;
             }
             const email = user.email.toLowerCase(); // Enforce case-insensitivity
@@ -58,7 +62,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             try {
                 await dbConnect();
                 const waitlistEntry = await Waitlist.findOne({ email });
-                console.log("[Auth] Waitlist Lookup", { email, found: !!waitlistEntry, status: waitlistEntry?.status });
+                // console.log("[Auth] Waitlist Lookup", { email, found: !!waitlistEntry, status: waitlistEntry?.status });
 
                 if (waitlistEntry && waitlistEntry.status === "APPROVED") {
                     // Rate Limiting Logic
@@ -74,13 +78,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     // Update last login attempt
                     waitlistEntry.lastLoginAttempt = now;
                     await waitlistEntry.save();
-                    console.log("[Auth] Login Approved");
+                    // console.log("[Auth] Login Approved");
 
                     return true;
                 }
 
                 // If not on waitlist, deny access
-                console.log("[Auth] Access Denied: Not on waitlist or not approved");
+                // console.log("[Auth] Access Denied: Not on waitlist or not approved");
                 return false;
 
             } catch (error) {

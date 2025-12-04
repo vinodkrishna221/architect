@@ -11,7 +11,7 @@ export function LoginCard() {
     const [email, setEmail] = useState("");
     const [accessCode, setAccessCode] = useState("");
     const [status, setStatus] = useState<"idle" | "valid" | "loading" | "success" | "error">("idle");
-    const [isHovered, setIsHovered] = useState(false);
+    // const [isHovered, setIsHovered] = useState(false); // Unused
     const [shake, setShake] = useState(false);
 
     const [state, dispatch, isPending] = useActionState(authenticate, undefined);
@@ -32,7 +32,8 @@ export function LoginCard() {
             } else {
                 setStatus("error");
                 setShake(true);
-                setTimeout(() => setShake(false), 500);
+                const timer = setTimeout(() => setShake(false), 500);
+                return () => clearTimeout(timer);
             }
         }
     }, [state]);
@@ -66,8 +67,8 @@ export function LoginCard() {
             animate="visible"
             style={{ willChange: "transform, opacity" }} // Hardware acceleration hint
             className="w-full max-w-[1100px] relative"
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
+        // onMouseEnter={() => setIsHovered(true)}
+        // onMouseLeave={() => setIsHovered(false)}
         >
             {/* Obsidian Glass Card */}
             <div className="relative bg-black/60 backdrop-blur-xl rounded-3xl border border-white/10 overflow-hidden shadow-2xl ring-1 ring-white/5">

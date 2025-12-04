@@ -33,8 +33,6 @@ export async function POST(request: Request) {
                 private_key: privateKey,
             },
             scopes: [
-                'https://www.googleapis.com/auth/drive',
-                'https://www.googleapis.com/auth/drive.file',
                 'https://www.googleapis.com/auth/spreadsheets',
             ],
         });

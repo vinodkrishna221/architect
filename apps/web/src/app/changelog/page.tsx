@@ -4,6 +4,14 @@ import { format } from "date-fns";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
+interface ChangelogEntry {
+    _id: string;
+    version: string;
+    title: string;
+    content: string;
+    date: Date;
+}
+
 export const dynamic = "force-dynamic";
 
 async function getChangelogs() {
@@ -38,7 +46,7 @@ export default async function ChangelogPage() {
                     {/* Vertical Line */}
                     <div className="absolute left-0 top-2 bottom-0 w-px bg-gradient-to-b from-blue-500/50 via-white/10 to-transparent md:left-4" />
 
-                    {changelogs.map((log: any) => (
+                    {changelogs.map((log: ChangelogEntry) => (
                         <div key={log._id} className="relative pl-8 md:pl-12 group">
                             {/* Dot */}
                             <div className="absolute left-[-4px] md:left-[13px] top-2 w-2.5 h-2.5 rounded-full bg-blue-500 ring-4 ring-black group-hover:scale-125 transition-transform duration-300" />

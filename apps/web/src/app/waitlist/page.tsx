@@ -33,9 +33,9 @@ export default function WaitlistPage() {
 
             setStatus("success");
             setEmail("");
-        } catch (error: any) {
+        } catch (error: unknown) {
             setStatus("error");
-            setErrorMessage(error.message || "Failed to join waitlist");
+            setErrorMessage(error instanceof Error ? error.message : "Failed to join waitlist");
         }
     };
 

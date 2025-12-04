@@ -10,7 +10,7 @@ const WaitlistSchema = new Schema({
     },
     createdAt: { type: Date, default: Date.now },
     lastLoginAttempt: { type: Date },
-    accessCode: { type: String }, // Unique access code for login
+    accessCode: { type: String }, // Hashed access code for login
 });
 
 // 2. USER SCHEMA

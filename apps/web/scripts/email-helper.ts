@@ -49,7 +49,7 @@ if (EMAIL_SERVER) {
         host: EMAIL_SERVER_HOST,
         port: Number(EMAIL_SERVER_PORT) || 587,
         tls: {
-            rejectUnauthorized: false
+            rejectUnauthorized: process.env.NODE_ENV === "production"
         }
     };
 
@@ -74,7 +74,7 @@ export async function sendEmail({ to, subject, text, html }: { to: string; subje
         await transporter.verify();
         console.log(`📧 SMTP connection verified. Sending to: ${to}`);
         console.log(`📧 From: ${EMAIL_FROM}`);
-        
+
         const info = await transporter.sendMail({
             from: EMAIL_FROM,
             to,

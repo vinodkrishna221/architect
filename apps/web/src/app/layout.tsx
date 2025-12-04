@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import CustomCursor from "@/components/ui/CustomCursor";
+import { Providers } from "@/components/providers/Providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,9 +29,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <CustomCursor />
-        <div className="fixed inset-0 z-[-1] bg-grid-pattern pointer-events-none [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_70%)]" />
-        {children}
+        <Providers>
+          <CustomCursor />
+          <div className="fixed inset-0 z-[-1] bg-grid-pattern pointer-events-none [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_70%)]" />
+          {children}
+        </Providers>
       </body>
     </html>
   );

@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { Waitlist } from "../src/lib/models";
 import { sendEmail } from "./email-helper";
 import * as dotenv from "dotenv";
+import bcrypt from "bcryptjs";
 
 dotenv.config({ path: ".env.local" });
 
@@ -31,13 +32,12 @@ async function approveUser(email: string) {
 
         // Generate 6-digit random code
         const accessCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const hashedCode = await bcrypt.hash(accessCode, 10);
 
         user.status = "APPROVED";
-        user.accessCode = accessCode;
+        user.accessCode = hashedCode;
         await user.save();
 
-        console.log(`\nSUCCESS! User ${email} approved.`);
-        console.log(`Access Code: ${accessCode}`);
         console.log(`\nSUCCESS! User ${email} approved.`);
         console.log(`Access Code: ${accessCode}`);
 

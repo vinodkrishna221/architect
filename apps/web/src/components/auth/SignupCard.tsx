@@ -4,51 +4,14 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useMotionValue, useSpring, Variants } from "framer-motion";
 import { ArrowRight, Github, Lock, Loader2, Check, Mail, User } from "lucide-react";
 
-// Magnetic Button Component (Reused)
-const MagneticButton = ({ children, className, onClick }: { children: React.ReactNode, className?: string, onClick?: () => void }) => {
-    const ref = useRef<HTMLButtonElement>(null);
-    const x = useMotionValue(0);
-    const y = useMotionValue(0);
-
-    const mouseX = useSpring(x, { stiffness: 150, damping: 15, mass: 0.1 });
-    const mouseY = useSpring(y, { stiffness: 150, damping: 15, mass: 0.1 });
-
-    const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
-        const { clientX, clientY } = e;
-        const { left, top, width, height } = ref.current!.getBoundingClientRect();
-        const centerX = left + width / 2;
-        const centerY = top + height / 2;
-        x.set((clientX - centerX) * 0.2);
-        y.set((clientY - centerY) * 0.2);
-    };
-
-    const handleMouseLeave = () => {
-        x.set(0);
-        y.set(0);
-    };
-
-    return (
-        <motion.button
-            ref={ref}
-            onMouseMove={handleMouseMove}
-            onMouseLeave={handleMouseLeave}
-            style={{ x: mouseX, y: mouseY }}
-            onClick={onClick}
-            className={className}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-        >
-            {children}
-        </motion.button>
-    );
-};
+import { MagneticButton } from "../shared/MagneticButton";
 
 export function SignupCard() {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [status, setStatus] = useState<"idle" | "valid" | "loading" | "success">("idle");
-    const [isHovered, setIsHovered] = useState(false);
+    // const [isHovered, setIsHovered] = useState(false); // Unused
     const [shake, setShake] = useState(false);
     const [passwordStrength, setPasswordStrength] = useState(0);
 
@@ -74,8 +37,8 @@ export function SignupCard() {
     const handleSubmit = async () => {
         if (status !== "valid") {
             setShake(true);
-            setTimeout(() => setShake(false), 500);
-            return;
+            const timer = setTimeout(() => setShake(false), 500);
+            return () => clearTimeout(timer);
         }
         setStatus("loading");
         await new Promise(resolve => setTimeout(resolve, 1500));
@@ -118,8 +81,8 @@ export function SignupCard() {
             animate="visible"
             style={{ willChange: "transform, opacity" }}
             className="w-full max-w-[1100px] relative"
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
+        // onMouseEnter={() => setIsHovered(true)}
+        // onMouseLeave={() => setIsHovered(false)}
         >
             {/* Obsidian Glass Card */}
             <div className="relative bg-black/60 backdrop-blur-xl rounded-3xl border border-white/10 overflow-hidden shadow-2xl ring-1 ring-white/5">

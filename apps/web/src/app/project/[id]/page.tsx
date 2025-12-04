@@ -32,6 +32,7 @@ export default function WorkspacePage() {
     const [isDragging, setIsDragging] = useState(false);
     const [focusMode, setFocusMode] = useState<FocusMode>("split");
     const containerRef = useRef<HTMLDivElement>(null);
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const handleSendMessage = async (text: string) => {
         const userMsg: Message = {
@@ -43,7 +44,7 @@ export default function WorkspacePage() {
         setMessages((prev) => [...prev, userMsg]);
         setIsProcessing(true);
 
-        setTimeout(() => {
+        timeoutRef.current = setTimeout(() => {
             const aiMsg: Message = {
                 id: (Date.now() + 1).toString(),
                 role: "assistant",
@@ -94,6 +95,15 @@ export default function WorkspacePage() {
             document.removeEventListener("mouseup", handleMouseUp);
         };
     }, [isDragging]);
+
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
+        };
+    }, []);
 
     // Determine actual widths based on focus mode
     const getPanelStyles = () => {
