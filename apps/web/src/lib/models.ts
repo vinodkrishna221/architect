@@ -3,10 +3,14 @@ import mongoose, { Schema } from "mongoose";
 // 1. WAITLIST SCHEMA
 const WaitlistSchema = new Schema({
     email: { type: String, required: true, unique: true },
+    name: { type: String }, // Optional: User's name
+    role: { type: String }, // Optional: Developer, Designer, Founder, etc.
+    referralSource: { type: String }, // Optional: How did you hear about us?
+    reason: { type: String }, // Optional: Why do you want to join?
     status: {
         type: String,
         enum: ["PENDING", "APPROVED", "REDEEMED"],
-        default: "APPROVED"
+        default: "PENDING"
     },
     createdAt: { type: Date, default: Date.now },
     lastLoginAttempt: { type: Date },

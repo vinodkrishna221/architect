@@ -25,10 +25,10 @@ async function approveUser(email: string) {
             process.exit(1);
         }
 
-        if (user.status === "APPROVED" && user.accessCode) {
-            console.log(`User ${email} is already approved with code: ${user.accessCode}`);
-            process.exit(0);
-        }
+        // if (user.status === "APPROVED" && user.accessCode) {
+        //     console.log(`User ${email} is already approved with code: ${user.accessCode}`);
+        //     process.exit(0);
+        // }
 
         // Generate 6-digit random code
         const accessCode = Math.floor(100000 + Math.random() * 900000).toString();

@@ -65,7 +65,7 @@ async function releaseUpdate() {
                     <div style="background: #f4f4f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
                         ${content}
                     </div>
-                    <p><a href="https://architect-web.vercel.app/changelog">View Full Changelog</a></p>
+                    <p><a href="https://the-architect-demo.vercel.app/changelog">View Full Changelog</a></p>
                 `
             });
             console.log(`  ✅ Notified: ${user.email}`);

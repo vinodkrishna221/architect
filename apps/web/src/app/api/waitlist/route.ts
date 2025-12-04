@@ -1,11 +1,45 @@
-import { google } from 'googleapis';
 import { NextResponse } from 'next/server';
+import mongoose from 'mongoose';
+import { Waitlist } from '@/lib/models';
+import { checkRateLimit, getClientIP } from '@/lib/rate-limiter';
+
+// Ensure mongoose connection
+async function connectDB() {
+    if (mongoose.connection.readyState >= 1) return;
+
+    const uri = process.env.MONGODB_URI;
+    if (!uri) {
+        throw new Error('MONGODB_URI not configured');
+    }
+    await mongoose.connect(uri);
+}
 
 export async function POST(request: Request) {
     try {
-        const body = await request.json();
-        const { email } = body;
+        // Rate limiting check
+        const ip = getClientIP(request);
+        const rateLimit = checkRateLimit(ip, 3, 60 * 60 * 1000); // 3 per hour
 
+        if (!rateLimit.allowed) {
+            return NextResponse.json(
+                {
+                    error: 'Too many requests. Please try again later.',
+                    retryAfter: rateLimit.resetIn
+                },
+                {
+                    status: 429,
+                    headers: {
+                        'Retry-After': rateLimit.resetIn.toString(),
+                        'X-RateLimit-Remaining': '0',
+                    }
+                }
+            );
+        }
+
+        const body = await request.json();
+        const { email, name, role, referralSource, reason } = body;
+
+        // Validate email
         if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
             return NextResponse.json(
                 { error: 'Invalid email address' },
@@ -13,47 +47,43 @@ export async function POST(request: Request) {
             );
         }
 
-        const privateKey = process.env.GOOGLE_SHEETS_PRIVATE_KEY?.replace(/\\n/g, '\n');
-        const clientEmail = process.env.GOOGLE_SHEETS_CLIENT_EMAIL;
-        const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
+        await connectDB();
 
-        if (!privateKey || !clientEmail || !spreadsheetId) {
-            console.error('Missing Google Sheets credentials');
-            // In development, we might want to return a mock success or specific error
-            // For now, we'll return a 500 but with a helpful message for the developer
-            return NextResponse.json(
-                { error: 'Server misconfiguration: Missing Google Sheets credentials' },
-                { status: 500 }
-            );
-        }
-
-        const auth = new google.auth.GoogleAuth({
-            credentials: {
-                client_email: clientEmail,
-                private_key: privateKey,
-            },
-            scopes: [
-                'https://www.googleapis.com/auth/spreadsheets',
-            ],
+        // Create new waitlist entry (allow duplicates as per user request)
+        const entry = await Waitlist.create({
+            email: email.toLowerCase().trim(),
+            name: name?.trim() || undefined,
+            role: role || undefined,
+            referralSource: referralSource || undefined,
+            reason: reason?.trim() || undefined,
+            status: 'PENDING',
         });
 
-        const sheets = google.sheets({ version: 'v4', auth });
-
-        await sheets.spreadsheets.values.append({
-            spreadsheetId,
-            range: 'Sheet1!A:B', // Assumes Sheet1 exists and we want to append to columns A and B
-            valueInputOption: 'USER_ENTERED',
-            requestBody: {
-                values: [
-                    [email, new Date().toISOString()], // Save email and timestamp
-                ],
-            },
+        // Get position (count of entries before this one + 1)
+        const position = await Waitlist.countDocuments({
+            createdAt: { $lte: entry.createdAt }
         });
 
-        return NextResponse.json({ success: true });
+        // Get total count for social proof
+        const totalCount = await Waitlist.countDocuments();
+
+        return NextResponse.json({
+            success: true,
+            position,
+            totalCount,
+        });
 
     } catch (error) {
         console.error('Error submitting to waitlist:', error);
+
+        // Check for duplicate key error (email already exists)
+        if (error instanceof Error && error.message.includes('duplicate key')) {
+            return NextResponse.json(
+                { error: 'This email is already on the waitlist!' },
+                { status: 409 }
+            );
+        }
+
         return NextResponse.json(
             { error: 'Internal server error' },
             { status: 500 }
