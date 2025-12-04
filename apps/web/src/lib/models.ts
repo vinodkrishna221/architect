@@ -10,6 +10,7 @@ const WaitlistSchema = new Schema({
     },
     createdAt: { type: Date, default: Date.now },
     lastLoginAttempt: { type: Date },
+    accessCode: { type: String }, // Unique access code for login
 });
 
 // 2. USER SCHEMA
@@ -25,6 +26,15 @@ const UserSchema = new Schema({
     updatedAt: { type: Date, default: Date.now },
 });
 
+// 3. CHANGELOG SCHEMA
+const ChangelogSchema = new Schema({
+    version: { type: String, required: true },
+    title: { type: String, required: true },
+    content: { type: String, required: true }, // Markdown or HTML
+    date: { type: Date, default: Date.now },
+});
+
 // Singleton Model Export Helper
 export const Waitlist = mongoose.models.Waitlist || mongoose.model("Waitlist", WaitlistSchema);
 export const User = mongoose.models.User || mongoose.model("User", UserSchema);
+export const Changelog = mongoose.models.Changelog || mongoose.model("Changelog", ChangelogSchema);

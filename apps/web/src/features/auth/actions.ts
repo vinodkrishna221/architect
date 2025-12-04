@@ -6,6 +6,7 @@ import { z } from "zod";
 
 const SignInSchema = z.object({
     email: z.string().email({ message: "Please enter a valid email address." }),
+    accessCode: z.string().min(1, { message: "Please enter your access code." }),
 });
 
 export async function authenticate(
@@ -17,21 +18,19 @@ export async function authenticate(
         const parsed = SignInSchema.safeParse(data);
 
         if (!parsed.success) {
-            return "Invalid email address.";
+            return "Invalid email or access code.";
         }
 
-        const { email } = parsed.data;
+        const { email, accessCode } = parsed.data;
 
-        await signIn("nodemailer", {
+        await signIn("credentials", {
             email,
-            redirect: false, // We handle redirect in client or it happens automatically? 
-            // Actually with redirect:false we get a response.
-            // But for Magic Links, usually we just want to trigger the email sending.
-            // If we use redirect: true (default), it redirects to verify-request page.
+            accessCode,
+            redirectTo: "/dashboard",
         });
 
-        // If we get here, it means signIn didn't throw (so email sent)
-        return "Magic link sent! Check your email.";
+        // This line will only be reached if redirect is false or if signIn doesn't throw redirect
+        return "Login successful!";
 
     } catch (error) {
         if (error instanceof AuthError) {

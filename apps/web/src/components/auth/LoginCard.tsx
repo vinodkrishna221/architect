@@ -9,23 +9,25 @@ import { MagneticButton } from "../shared/MagneticButton";
 
 export function LoginCard() {
     const [email, setEmail] = useState("");
+    const [accessCode, setAccessCode] = useState("");
     const [status, setStatus] = useState<"idle" | "valid" | "loading" | "success" | "error">("idle");
     const [isHovered, setIsHovered] = useState(false);
     const [shake, setShake] = useState(false);
 
     const [state, dispatch, isPending] = useActionState(authenticate, undefined);
 
-    // Validate email
+    // Validate email and access code
     useEffect(() => {
         if (isPending || status === "success") return;
-        const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-        setStatus(isValid ? "valid" : "idle");
-    }, [email, isPending, status]);
+        const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        const isCodeValid = accessCode.length >= 6;
+        setStatus(isEmailValid && isCodeValid ? "valid" : "idle");
+    }, [email, accessCode, isPending, status]);
 
     // Handle server action state changes
     useEffect(() => {
         if (state) {
-            if (state === "Magic link sent! Check your email.") {
+            if (state === "Login successful!") {
                 setStatus("success");
             } else {
                 setStatus("error");
@@ -96,6 +98,18 @@ export function LoginCard() {
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="dev@architect.io"
+                                    disabled={isPending || status === "success"}
+                                    className="w-full h-14 bg-zinc-900/50 border border-white/10 rounded-xl px-4 pr-14 
+                                             text-white placeholder:text-zinc-600 font-mono text-sm 
+                                             outline-none transition-all duration-300
+                                             focus:border-blue-500/50 focus:bg-zinc-900/80 focus:shadow-[0_0_30px_-5px_rgba(59,130,246,0.2)] mb-3"
+                                />
+                                <input
+                                    type="password"
+                                    name="accessCode"
+                                    value={accessCode}
+                                    onChange={(e) => setAccessCode(e.target.value)}
+                                    placeholder="Access Code"
                                     disabled={isPending || status === "success"}
                                     className="w-full h-14 bg-zinc-900/50 border border-white/10 rounded-xl px-4 pr-14 
                                              text-white placeholder:text-zinc-600 font-mono text-sm 

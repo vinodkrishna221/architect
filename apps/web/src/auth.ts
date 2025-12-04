@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import { MongoDBAdapter } from "@auth/mongodb-adapter";
 import clientPromise from "@/lib/mongodb";
 import { authConfig } from "./auth.config";
-import Nodemailer from "next-auth/providers/nodemailer";
+import Credentials from "next-auth/providers/credentials";
 import dbConnect from "@/lib/db";
 import { Waitlist } from "@/lib/models";
 
@@ -11,32 +11,54 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     adapter: MongoDBAdapter(clientPromise),
     session: { strategy: "jwt" },
     providers: [
-        Nodemailer({
-            server: {
-                host: process.env.EMAIL_SERVER_HOST || "smtp.gmail.com",
-                port: Number(process.env.EMAIL_SERVER_PORT) || 587,
-                auth: {
-                    user: "bandavinodkrishna@gmail.com",
-                    pass: process.env.EMAIL_SERVER_PASSWORD || "wazmkabdszpifdvh"
-                },
-                tls: {
-                    rejectUnauthorized: false
-                }
+        Credentials({
+            name: "Access Code",
+            credentials: {
+                email: { label: "Email", type: "email" },
+                accessCode: { label: "Access Code", type: "password" }
             },
-            from: process.env.EMAIL_FROM,
-            maxAge: 15 * 60, // 15 minutes
+            async authorize(credentials) {
+                if (!credentials?.email || !credentials?.accessCode) return null;
+                const email = (credentials.email as string).toLowerCase();
+                const accessCode = credentials.accessCode as string;
+
+                try {
+                    await dbConnect();
+                    const waitlistEntry = await Waitlist.findOne({ email });
+
+                    if (waitlistEntry && waitlistEntry.status === "APPROVED") {
+                        // Verify Access Code
+                        if (waitlistEntry.accessCode === accessCode) {
+                            return {
+                                id: waitlistEntry._id.toString(),
+                                email: waitlistEntry.email,
+                                name: waitlistEntry.name || email.split("@")[0]
+                            };
+                        }
+                    }
+                    return null;
+                } catch (error) {
+                    console.error("Auth error:", error);
+                    return null;
+                }
+            }
         }),
     ],
     callbacks: {
         ...authConfig.callbacks,
         async signIn({ user }) {
+            console.log("[Auth] SignIn Callback Started", { email: user.email });
             // 1. Check if user exists in Waitlist
-            if (!user.email) return false;
+            if (!user.email) {
+                console.log("[Auth] No email provided");
+                return false;
+            }
             const email = user.email.toLowerCase(); // Enforce case-insensitivity
 
             try {
                 await dbConnect();
                 const waitlistEntry = await Waitlist.findOne({ email });
+                console.log("[Auth] Waitlist Lookup", { email, found: !!waitlistEntry, status: waitlistEntry?.status });
 
                 if (waitlistEntry && waitlistEntry.status === "APPROVED") {
                     // Rate Limiting Logic
@@ -45,22 +67,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     const COOLDOWN_MS = 60 * 1000; // 60 seconds
 
                     if (lastAttempt && (now.getTime() - lastAttempt.getTime() < COOLDOWN_MS)) {
-                        console.warn(`Rate limit exceeded for ${email}`);
+                        console.warn(`[Auth] Rate limit exceeded for ${email}`);
                         return false; // Or redirect to error page
                     }
 
                     // Update last login attempt
                     waitlistEntry.lastLoginAttempt = now;
                     await waitlistEntry.save();
+                    console.log("[Auth] Login Approved");
 
                     return true;
                 }
 
                 // If not on waitlist, deny access
+                console.log("[Auth] Access Denied: Not on waitlist or not approved");
                 return false;
 
             } catch (error) {
-                console.error("Waitlist check error:", error);
+                console.error("[Auth] Waitlist check error:", error);
                 return false;
             }
         },
