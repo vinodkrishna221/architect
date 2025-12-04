@@ -1,205 +1,62 @@
-Backend Technical Spec: "The Architect" Core
-1. Overview
-This document defines the server-side architecture, database schemas, and business logic for "The Architect." The system runs entirely within the Next.js 15 App Router environment using Server Actions. There is no separate API server.
+# Backend Technical Spec: "The Architect" Core
 
-2. Tech Stack (Backend Strict)
-Runtime: Node.js (Next.js Server Actions).
+## 1. Overview
+This document defines the server-side architecture, database schemas, and business logic for "The Architect." The system runs entirely within the Next.js 15 App Router environment using Server Actions.
 
-Database: MongoDB Atlas (Multi-cloud).
+## 2. Tech Stack (Backend Strict)
+*   **Runtime:** Node.js (Next.js Server Actions).
+*   **Database:** MongoDB Atlas (Multi-cloud).
+*   **ORM:** Mongoose (Strict Schema Validation).
+*   **Validation:** Zod (Runtime data validation).
+*   **Auth:** NextAuth v5 (Auth.js).
+*   **AI Engine:** Vercel AI SDK (ai package) + Anthropic Claude 3.5 Sonnet.
 
-ORM: Mongoose (Strict Schema Validation).
+## 3. Database Architecture (Mongoose)
+*See `DATABASE_ARCHITECTURE.md` for full schema definitions.*
 
-Validation: Zod (Runtime data validation).
+### Key Schema Updates for Agentic Workflow
+*   **Project Schema:** Must support a large `context` array for the **10-30 question** interrogation.
+*   **Artifact Schema:** Must support new types: `DESIGN`, `FRONTEND`, `BACKEND`, `SECURITY`, `DATABASE`, `MVP`.
 
-Auth: NextAuth v5 (Beta) / Auth.js.
+## 4. Server Actions (API Layer)
+**Location:** `src/features/project/actions.ts`
 
-AI Engine: Vercel AI SDK (ai package) + Anthropic Claude 3.5 Sonnet.
+### Action 1: `analyzeIdea(formData: FormData)`
+*   **Trigger:** User submits raw idea.
+*   **Logic:**
+    1.  Validate input with Zod.
+    2.  **AI Call (The Analyst):** "Analyze this idea. Ask **10-30** strategic questions to uncover domain complexity. Identify 'fluff' features for Scope Rationalization."
+    3.  Create Project doc with status `WAITING_INPUT`.
+    4.  Return projectId and questions.
 
-Rate Limiting: Custom implementation via User Credits in MongoDB.
+### Action 2: `submitContext(projectId: string, answers: any[])`
+*   **Trigger:** User answers the deep-dive questions.
+*   **Logic:**
+    1.  Update Project document with answers.
+    2.  **AI Call (The Architect):** Parallel execution to generate the **Blueprint Suite**.
+        *   Task A: Design System PRD
+        *   Task B: Frontend PRD
+        *   Task C: Backend PRD
+        *   Task D: Security PRD
+        *   Task E: Database Architecture
+        *   Task F: MVP Feature List
+    3.  Save results to Artifact collection.
 
-3. Database Architecture (Mongoose)
-Critical Pattern: Use the Singleton Connection Pattern to prevent connection pool exhaustion in Serverless/HMR environments.
+### Action 3: `generatePrompts(projectId: string)`
+*   **Trigger:** User approves the "Gatekeeper" modal.
+*   **Logic:**
+    1.  Reads all generated PRDs.
+    2.  **AI Call (The Engineering Manager):** "Generate implementation prompts **one by one**, component by component. Do not dump."
+    3.  Stream the prompts to the client.
 
-A. Connection Module (src/lib/db.ts)
-TypeScript
+## 5. AI System Prompts (System Instructions)
+**Location:** `src/lib/ai/prompts.ts`
 
-import mongoose from 'mongoose';
+### The Analyst (Phase 1)
+"You are a Senior Requirements Analyst. The user has an idea. Your job is to conduct a **Deep-Dive Interrogation**. Ask **10-30** strategic questions. Challenge 'fluff' features. Return JSON."
 
-const MONGODB_URI = process.env.MONGODB_URI!;
+### The Architect (Phase 2)
+"You are a Senior Principal Architect. Generate the requested PRD (Design/Frontend/Backend/Security/DB). Be exhaustive, professional, and authoritative."
 
-if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable');
-}
-
-// Global caching for HMR (Hot Module Replacement)
-let cached = (global as any).mongoose;
-
-if (!cached) {
-  cached = (global as any).mongoose = { conn: null, promise: null };
-}
-
-async function connectDB() {
-  if (cached.conn) return cached.conn;
-
-  if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI, {
-      bufferCommands: false,
-    }).then((mongoose) => {
-      return mongoose;
-    });
-  }
-  try {
-    cached.conn = await cached.promise;
-  } catch (e) {
-    cached.promise = null;
-    throw e;
-  }
-  return cached.conn;
-}
-
-export default connectDB;
-B. Schemas (src/lib/models.ts)
-1. User Schema
-Purpose: Auth and Credit tracking.
-
-TypeScript
-
-const UserSchema = new mongoose.Schema({
-  name: String,
-  email: { type: String, required: true, unique: true },
-  image: String,
-  // MVP Rate Limiting: Refills via cron or manual logic later
-  credits: { type: Number, default: 3 }, 
-  createdAt: { type: Date, default: Date.now },
-});
-2. Project Schema
-Purpose: Stores the state of the idea and the "Interrogation" context.
-
-TypeScript
-
-const ProjectSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  title: { type: String, default: 'New Project' },
-  
-  // 1. The User's initial raw input
-  rawIdea: { type: String, required: true },
-  
-  // 2. The AI's clarifying questions and user's answers
-  // Stored as an embedded array for fast retrieval
-  context: [{
-    questionId: String,
-    questionText: String,
-    userAnswer: String, // Null until answered
-  }],
-
-  // 3. State Machine
-  status: { 
-    type: String, 
-    enum: ['DRAFT', 'ANALYZING', 'WAITING_INPUT', 'GENERATED'], 
-    default: 'DRAFT' 
-  },
-  
-  updatedAt: { type: Date, default: Date.now }
-});
-3. Artifact Schema
-Purpose: Stores the generated PRDs. Index Strategy: Compound index on projectId + type for fast lookups.
-
-TypeScript
-
-const ArtifactSchema = new mongoose.Schema({
-  projectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Project', required: true },
-  type: { type: String, enum: ['FRONTEND', 'BACKEND'], required: true },
-  content: { type: String, required: true }, // Markdown content
-  version: { type: Number, default: 1 },
-  createdAt: { type: Date, default: Date.now }
-});
-4. Server Actions (API Layer)
-Location: src/features/project/actions.ts Security Rule: Every action must start with:
-
-const session = await auth()
-
-if (!session) throw new Error('Unauthorized')
-
-Action 1: analyzeIdea(formData: FormData)
-Trigger: User submits raw idea.
-
-Logic:
-
-Validate input with Zod (z.string().min(10)).
-
-Check User Credits (user.credits > 0).
-
-AI Call (The Critic): Send prompt to Claude 3.5 Sonnet.
-
-Prompt: "Analyze this app idea. Identify 3 critical technical ambiguities. Return valid JSON only: { questions: [] }."
-
-Create Project doc with status WAITING_INPUT.
-
-Return projectId and questions.
-
-Action 2: submitContext(projectId: string, answers: any[])
-Trigger: User answers the questions.
-
-Logic:
-
-Update Project document: Save answers, set status to GENERATED.
-
-Deduct 1 Credit from User.
-
-AI Call (The Architect): Parallel execution (Promise.all).
-
-Task A: Generate backend.md (Schema, API, Security).
-
-Task B: Generate frontend.md (Components, State, UX).
-
-Save result to Artifact collection.
-
-Revalidate Next.js cache path.
-
-Action 3: getDashboardData()
-Trigger: /dashboard page load.
-
-Logic: Fetch all Projects where userId == session.user.id. Sort by updatedAt: -1.
-
-5. Zod Validation Schemas
-Location: src/lib/validators.ts
-
-TypeScript
-
-import { z } from "zod";
-
-export const IdeaInputSchema = z.object({
-  rawIdea: z.string().min(10, "Describe your idea in at least 10 characters").max(2000),
-});
-
-export const ContextSubmissionSchema = z.object({
-  projectId: z.string(),
-  answers: z.array(z.object({
-    questionId: z.string(),
-    answer: z.string().min(1, "Answer is required"),
-  })),
-});
-6. AI System Prompts (System Instructions)
-Location: src/lib/ai/prompts.ts
-
-The Critic (Phase 1)
-"You are a ruthless Senior Product Manager. The user has an idea. Your job is NOT to build it, but to find the holes. What tech stack details are missing? What auth strategy? What payment model? Ask 3 distinct, multiple-choice technical questions to clarify the MVP scope. Return strictly JSON."
-
-The Backend Architect (Phase 2)
-"You are a Senior Backend Engineer. Generate a technical backend.md file. Include: 1. Mongoose Schemas (TypeScript). 2. API Server Action signatures. 3. Security/RLS rules. Do NOT write frontend code. Use Next.js 15 / MongoDB conventions."
-
-The Frontend Architect (Phase 2)
-"You are a Senior Frontend Engineer. Generate a frontend.md file. Include: 1. Component Tree structure. 2. Shadcn/UI components needed. 3. Global State strategy (Zustand/Nuqs). Focus on UX flows and responsiveness."
-
-7. Implementation Checklist
-[ ] Set up MongoDB Atlas Cluster.
-
-[ ] Configure .env (MONGODB_URI, AUTH_SECRET, ANTHROPIC_API_KEY).
-
-[ ] Create lib/db.ts (Singleton).
-
-[ ] Create Mongoose Models.
-
-[ ] Implement analyzeIdea Server Action with Zod.
-
-[ ] Implement submitContext Server Action with Zod.
+### The Engineering Manager (Phase 3)
+"You are a Lead Engineer. Convert these PRDs into a series of **Implementation Prompts**. Output them one by one. Include specific instructions for the user (e.g., 'Attach inspiration')."

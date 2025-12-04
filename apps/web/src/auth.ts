@@ -9,6 +9,7 @@ import { Waitlist } from "@/lib/models";
 export const { handlers, auth, signIn, signOut } = NextAuth({
     ...authConfig,
     adapter: MongoDBAdapter(clientPromise),
+    session: { strategy: "jwt" },
     providers: [
         Nodemailer({
             server: {
@@ -23,25 +24,39 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 }
             },
             from: process.env.EMAIL_FROM,
+            maxAge: 15 * 60, // 15 minutes
         }),
     ],
     callbacks: {
         ...authConfig.callbacks,
-        async signIn({ user, email }) {
+        async signIn({ user }) {
             // 1. Check if user exists in Waitlist
             if (!user.email) return false;
+            const email = user.email.toLowerCase(); // Enforce case-insensitivity
 
             try {
                 await dbConnect();
-                const waitlistEntry = await Waitlist.findOne({ email: user.email });
+                const waitlistEntry = await Waitlist.findOne({ email });
 
                 if (waitlistEntry && waitlistEntry.status === "APPROVED") {
+                    // Rate Limiting Logic
+                    const now = new Date();
+                    const lastAttempt = waitlistEntry.lastLoginAttempt;
+                    const COOLDOWN_MS = 60 * 1000; // 60 seconds
+
+                    if (lastAttempt && (now.getTime() - lastAttempt.getTime() < COOLDOWN_MS)) {
+                        console.warn(`Rate limit exceeded for ${email}`);
+                        return false; // Or redirect to error page
+                    }
+
+                    // Update last login attempt
+                    waitlistEntry.lastLoginAttempt = now;
+                    await waitlistEntry.save();
+
                     return true;
                 }
 
                 // If not on waitlist, deny access
-                // We can return a string to redirect to a specific error page, e.g. "/login?error=AccessDenied"
-                // Or just false to show a generic error.
                 return false;
 
             } catch (error) {

@@ -9,6 +9,7 @@ const WaitlistSchema = new Schema({
         default: "APPROVED"
     },
     createdAt: { type: Date, default: Date.now },
+    lastLoginAttempt: { type: Date },
 });
 
 // 2. USER SCHEMA
