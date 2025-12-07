@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import dbConnect from "@/lib/db";
 import { Project } from "@/lib/models";
+import mongoose from "mongoose";
 
 // Security: Zod schema for project input validation
 const createProjectSchema = z.object({
@@ -19,9 +20,19 @@ export async function GET() {
         }
 
         await dbConnect();
-        const projects = await Project.find({ userId: session.user.id })
+        const rawProjects = await Project.find({ userId: session.user.id })
             .sort({ updatedAt: -1 })
             .lean();
+
+        // Map _id to id for frontend compatibility
+        const projects = rawProjects.map((p) => ({
+            id: (p._id as mongoose.Types.ObjectId).toString(),
+            title: p.title,
+            description: p.description,
+            status: p.status,
+            createdAt: p.createdAt,
+            updatedAt: p.updatedAt,
+        }));
 
         return NextResponse.json({ projects });
     } catch (error) {
