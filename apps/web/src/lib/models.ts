@@ -30,6 +30,8 @@ const UserSchema = new Schema({
     email: { type: String, unique: true },
     emailVerified: Date,
     image: String,
+    // Credit system - 30 credits for beta users, no auto-refill
+    credits: { type: Number, default: 30 },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
 });

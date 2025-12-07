@@ -10,6 +10,7 @@ import {
     buildBlueprintPrompt,
     BlueprintType,
 } from "@/lib/ai/prompts/blueprints";
+import { deductCredits, CREDIT_COSTS } from "@/lib/credits";
 
 // Extended timeout for long-running generation (5 minutes)
 export const maxDuration = 300;
@@ -83,13 +84,31 @@ export async function POST(req: Request) {
             );
         }
 
-        // 3. Build conversation summary
+        // 3. Deduct credits for blueprint suite generation (3 credits)
+        const creditResult = await deductCredits(
+            session.user.id,
+            CREDIT_COSTS.BLUEPRINT_SUITE,
+            "blueprint_suite_generation"
+        );
+
+        if (!creditResult.success) {
+            return NextResponse.json(
+                {
+                    error: "Insufficient credits",
+                    message: creditResult.error,
+                    remainingCredits: creditResult.remainingCredits,
+                },
+                { status: 402 } // Payment Required
+            );
+        }
+
+        // 4. Build conversation summary
         const conversationSummary = buildConversationSummary(
             conversation.initialDescription,
             conversation.messages
         );
 
-        // 4. Create BlueprintSuite record
+        // 5. Create BlueprintSuite record
         const suite = await BlueprintSuite.create({
             projectId: conversation.projectId,
             conversationId: conversation._id,

@@ -13,6 +13,7 @@ interface InterrogationChatProps {
 export function InterrogationChat({ projectId }: InterrogationChatProps) {
     const [input, setInput] = useState("");
     const [initialDescription, setInitialDescription] = useState("");
+    const [isInitialLoading, setIsInitialLoading] = useState(true); // Track initial load
     const scrollRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -27,7 +28,36 @@ export function InterrogationChat({ projectId }: InterrogationChatProps) {
         setComplete,
         setLoading,
         setQuestionsAsked,
+        loadConversation,
     } = useWorkspaceStore();
+
+    // Load existing conversation on mount
+    useEffect(() => {
+        const loadExistingConversation = async () => {
+            try {
+                const res = await fetch(`/api/ai/conversation/${projectId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.exists) {
+                        // Load existing conversation into store
+                        loadConversation({
+                            conversationId: data.conversationId,
+                            messages: data.messages,
+                            questionsAsked: data.questionsAsked,
+                            isComplete: data.isComplete,
+                            suiteId: data.suiteId,
+                            blueprints: data.blueprints,
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to load conversation:", error);
+            } finally {
+                setIsInitialLoading(false);
+            }
+        };
+        loadExistingConversation();
+    }, [projectId, loadConversation]);
 
     // Auto-scroll to bottom when messages change
     useEffect(() => {
@@ -126,7 +156,24 @@ export function InterrogationChat({ projectId }: InterrogationChatProps) {
         }
     };
 
-    // Initial description input screen
+    // Show loading state while checking for existing conversation
+    if (isInitialLoading) {
+        return (
+            <div className="flex flex-col h-full bg-[#0A0A0A] border-r border-white/5">
+                <div className="h-14 border-b border-white/5 flex items-center px-6 bg-black/20 backdrop-blur-sm shrink-0">
+                    <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)] animate-pulse" />
+                        <span className="text-sm font-mono text-white/60 tracking-wider">LOADING...</span>
+                    </div>
+                </div>
+                <div className="flex-1 flex items-center justify-center">
+                    <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+                </div>
+            </div>
+        );
+    }
+
+    // Initial description input screen (only show if no existing conversation)
     if (!conversationId) {
         return (
             <div className="flex flex-col h-full bg-[#0A0A0A] border-r border-white/5">

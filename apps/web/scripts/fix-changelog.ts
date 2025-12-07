@@ -1,58 +1,31 @@
-import 'dotenv/config';
 import mongoose from 'mongoose';
 import { Changelog } from '../src/lib/models';
+import * as dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
 
-const MONGODB_URI = process.env.MONGODB_URI;
+const content = `### ✨ New Features
+- **Toast Notifications**: Added beautiful toast notifications for user feedback using Sonner
+- Login success/error notifications
+- Project creation success/error notifications  
+- Project deletion success/error notifications       
 
-if (!MONGODB_URI) {
-    console.error('MONGODB_URI not set');
-    process.exit(1);
-}
+### 🐛 Bug Fixes
+- **Fixed project deletion**: Projects now delete correctly (was showing undefined ID error)
+- **Fixed login errors**: Improved error handling for credential validation
+- **Fixed JWT session**: Session now properly passes user ID using token`;
 
-const fixedContent = `### ✨ New Features
-- AI-powered interrogation engine for gathering requirements
-- Blueprint generation with 6 document types
-- Real-time progress tracking during generation
-- Download blueprints as .md files
-- Copy to clipboard functionality
-- Mobile responsive workspace with tab navigation
-- Retry button for failed generations
+async function fix() {
+    if (!process.env.MONGODB_URI) {
+        console.error("MONGODB_URI not found");
+        process.exit(1);
+    }
+    console.log("Connecting to MongoDB...");
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log("Connected! Updating...");
 
-### 🔧 Technical Improvements
-- Centralized type system in \`lib/types.ts\`
-- OpenRouter AI client with automatic key rotation
-- Consistent userId handling across all API routes
-- Security headers configured (X-Frame-Options, XSS Protection, etc.)
-
-### 🐛 Fixes
-- Fixed userId inconsistency between Project and Conversation models
-- Renamed Waitlist.role to jobRole to avoid confusion with Message.role
-- Consolidated duplicate type definitions`;
-
-async function fixChangelog() {
-    await mongoose.connect(MONGODB_URI!);
-    console.log('Connected to MongoDB');
-
-    // Update the v1.0.0 changelog entry
-    const result = await Changelog.updateOne(
-        { version: 'v1.0.0' },
-        {
-            $set: {
-                content: fixedContent,
-                title: 'AI PRD Generator Launch'
-            }
-        }
-    );
-
-    console.log('Updated:', result.modifiedCount, 'document(s)');
-
-    // Verify
-    const updated = await Changelog.findOne({ version: 'v1.0.0' });
-    console.log('\nUpdated content preview:');
-    console.log(updated?.content?.slice(0, 200) + '...');
-
+    const result = await Changelog.updateOne({ version: 'v1.1.0' }, { content });
+    console.log('Update result:', result);
+    console.log('Fixed!');
     await mongoose.disconnect();
-    console.log('\nDone!');
 }
-
-fixChangelog().catch(console.error);
+fix();

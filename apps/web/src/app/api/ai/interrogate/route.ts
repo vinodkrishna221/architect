@@ -7,6 +7,7 @@ import {
     INTERROGATION_SYSTEM_PROMPT,
     buildInterrogationUserPrompt
 } from "@/lib/ai/prompts/interrogation";
+import { deductCredits, CREDIT_COSTS, getCreditBalance } from "@/lib/credits";
 
 interface InterrogationRequest {
     conversationId?: string;
@@ -49,8 +50,25 @@ export async function POST(req: Request) {
                 return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
             }
 
-            // Add user's answer to the conversation
+            // Deduct credits for user message (0.1 credits per message)
             if (userMessage) {
+                const creditResult = await deductCredits(
+                    session.user.id,
+                    CREDIT_COSTS.MESSAGE,
+                    "interview_message"
+                );
+
+                if (!creditResult.success) {
+                    return NextResponse.json(
+                        {
+                            error: "Insufficient credits",
+                            message: creditResult.error,
+                            remainingCredits: creditResult.remainingCredits
+                        },
+                        { status: 402 } // Payment Required
+                    );
+                }
+
                 conversation.messages.push({ role: "user", content: userMessage });
             }
         } else {

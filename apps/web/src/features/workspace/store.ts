@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import { Message, Blueprint } from "@/lib/types";
+import { Message, Blueprint, MessageCategory } from "@/lib/types";
 
 // Re-export for backward compatibility
 export type { Message, Blueprint };
@@ -43,6 +43,16 @@ interface WorkspaceState extends InterrogationState, BlueprintState {
 
     // Utility actions
     reset: () => void;
+
+    // Load existing conversation from API response
+    loadConversation: (data: {
+        conversationId: string;
+        messages: Array<{ id: string; role: "user" | "assistant"; content: string; category?: MessageCategory }>;
+        questionsAsked: number;
+        isComplete: boolean;
+        suiteId?: string | null;
+        blueprints?: Blueprint[];
+    }) => void;
 }
 
 const initialState: InterrogationState & BlueprintState = {
@@ -110,4 +120,22 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
 
     // Reset to initial state
     reset: () => set(initialState),
+
+    // Load existing conversation from API (for returning users)
+    loadConversation: (data) =>
+        set((state) => ({
+            conversationId: data.conversationId,
+            messages: data.messages.map((msg) => ({
+                ...msg,
+                timestamp: new Date(),
+            })),
+            questionsAsked: data.questionsAsked,
+            isComplete: data.isComplete,
+            // Only update blueprint state if provided
+            ...(data.suiteId && { suiteId: data.suiteId }),
+            ...(data.blueprints && data.blueprints.length > 0 && {
+                blueprints: data.blueprints,
+                activeBlueprint: state.activeBlueprint || data.blueprints[0]?.type || null,
+            }),
+        })),
 }));
