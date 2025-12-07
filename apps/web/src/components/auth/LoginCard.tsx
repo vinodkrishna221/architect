@@ -4,6 +4,7 @@ import { useState, useEffect, useActionState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Github, Lock, Loader2, Check, AlertCircle } from "lucide-react";
 import { authenticate } from "@/features/auth/actions";
+import { toast } from "sonner";
 
 import { MagneticButton } from "../shared/MagneticButton";
 
@@ -29,8 +30,14 @@ export function LoginCard() {
         if (state) {
             if (state === "Login successful!") {
                 setStatus("success");
+                toast.success("Welcome back!", {
+                    description: "Redirecting to dashboard...",
+                });
             } else {
                 setStatus("error");
+                toast.error("Login failed", {
+                    description: state,
+                });
                 setShake(true);
                 const timer = setTimeout(() => setShake(false), 500);
                 return () => clearTimeout(timer);

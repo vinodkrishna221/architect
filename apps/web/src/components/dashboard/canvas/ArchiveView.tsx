@@ -7,6 +7,7 @@ import { Search, ChevronDown, MoreHorizontal, Trash2, Loader2 } from "lucide-rea
 import { formatDistanceToNow } from "date-fns";
 import { motion, useMotionValue, useMotionTemplate, AnimatePresence } from "framer-motion";
 import { Project } from "@/lib/mock-data";
+import { toast } from "sonner";
 
 export function ArchiveView() {
     const [search, setSearch] = useState("");
@@ -23,9 +24,20 @@ export function ArchiveView() {
     );
 
     const handleDelete = async (id: string) => {
+        const project = projects.find(p => p.id === id);
         setDeleteId(id);
-        await deleteProject(id);
+        const success = await deleteProject(id);
         setDeleteId(null);
+
+        if (success) {
+            toast.success("Project deleted", {
+                description: project?.title || "Project has been removed",
+            });
+        } else {
+            toast.error("Failed to delete project", {
+                description: "Please try again later",
+            });
+        }
     };
 
     return (

@@ -35,6 +35,8 @@ export async function authenticate(
     } catch (error) {
         if (error instanceof AuthError) {
             switch (error.type) {
+                case "CredentialsSignin":
+                    return "Invalid email or access code.";
                 case "AccessDenied":
                     return "You are not on the waitlist.";
                 case "CallbackRouteError":

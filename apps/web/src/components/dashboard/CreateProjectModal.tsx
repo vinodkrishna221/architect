@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Loader2, Sparkles } from "lucide-react";
 import { useDashboardStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface CreateProjectModalProps {
     isOpen: boolean;
@@ -32,13 +33,22 @@ export function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps)
         const project = await createProject(title.trim(), description.trim());
 
         if (project) {
+            toast.success("Project created!", {
+                description: `"${title.trim()}" is ready to go`,
+            });
             onClose();
             setTitle("");
             setDescription("");
             // Navigate to the new project workspace
             router.push(`/project/${project.id}`);
         } else {
-            setError("Failed to create project. Daily limit may have been reached.");
+            const errorMsg = remainingToday <= 0
+                ? "Daily limit reached. Come back tomorrow!"
+                : "Failed to create project. Please try again.";
+            toast.error("Creation failed", {
+                description: errorMsg,
+            });
+            setError(errorMsg);
         }
 
         setIsSubmitting(false);
