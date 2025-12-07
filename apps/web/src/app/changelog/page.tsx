@@ -3,6 +3,7 @@ import dbConnect from "@/lib/db";
 import { format } from "date-fns";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { marked } from "marked";
 
 interface ChangelogEntry {
     _id: string;
@@ -13,6 +14,12 @@ interface ChangelogEntry {
 }
 
 export const dynamic = "force-dynamic";
+
+// Configure marked for better rendering
+marked.setOptions({
+    breaks: true,  // Convert \n to <br>
+    gfm: true,     // GitHub Flavored Markdown
+});
 
 async function getChangelogs() {
     await dbConnect();
@@ -65,10 +72,18 @@ export default async function ChangelogPage() {
                                     <h2 className="text-xl font-semibold text-white mb-4">
                                         {log.title}
                                     </h2>
-                                    <div className="prose prose-invert prose-sm max-w-none text-zinc-300">
-                                        {/* Simple rendering for now, can use a markdown parser later if needed */}
-                                        <p className="whitespace-pre-wrap">{log.content}</p>
-                                    </div>
+                                    {/* Render markdown content */}
+                                    <div
+                                        className="prose prose-invert prose-sm max-w-none text-zinc-300 
+                                            prose-headings:text-white prose-headings:font-semibold
+                                            prose-h3:text-lg prose-h3:mt-4 prose-h3:mb-2
+                                            prose-ul:my-2 prose-li:my-0.5
+                                            prose-code:bg-zinc-800 prose-code:px-1 prose-code:rounded
+                                            prose-strong:text-white"
+                                        dangerouslySetInnerHTML={{
+                                            __html: marked.parse(log.content) as string
+                                        }}
+                                    />
                                 </div>
                             </div>
                         </div>

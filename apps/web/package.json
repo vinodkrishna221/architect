@@ -13,6 +13,7 @@
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-slot": "^1.2.4",
     "@react-three/fiber": "^9.4.0",
+    "@tailwindcss/typography": "^0.5.19",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -24,7 +25,7 @@
     "marked": "^17.0.1",
     "mongodb": "^6.21.0",
     "mongoose": "^9.0.0",
-    "next": "16.0.3",
+    "next": "^16.0.7",
     "next-auth": "^5.0.0-beta.30",
     "nodemailer": "^7.0.11",
     "openai": "^6.10.0",
@@ -47,7 +48,7 @@
     "@types/react-dom": "^19",
     "dotenv": "^17.2.3",
     "eslint": "^9",
-    "eslint-config-next": "16.0.3",
+    "eslint-config-next": "^16.0.7",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
