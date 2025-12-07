@@ -1,10 +1,40 @@
 import { create } from 'zustand';
 import { Project, MOCK_PROJECTS } from './mock-data';
 
+// API Project type (from MongoDB)
+export interface ApiProject {
+    id: string;
+    title: string;
+    description: string;
+    status: 'DRAFT' | 'GENERATING' | 'COMPLETED' | 'AWAITING_ANSWERS';
+    createdAt: string;
+    updatedAt: string;
+}
+
+// Convert API project to local format
+function apiToLocal(project: ApiProject): Project {
+    return {
+        id: project.id,
+        title: project.title,
+        status: project.status,
+        description: project.description,
+        updatedAt: new Date(project.updatedAt),
+    };
+}
+
 interface DashboardState {
     view: 'ARCHIVE' | 'PROJECT';
     activeProjectId: string | null;
     dockItems: Project[];
+
+    // API-driven state
+    projects: Project[];
+    isLoading: boolean;
+    error: string | null;
+
+    // User stats
+    remainingToday: number;
+    dailyLimit: number;
 
     // Actions
     openProject: (id: string) => void;
@@ -12,19 +42,29 @@ interface DashboardState {
     minimizeProject: () => void;
     addToDock: (project: Project) => void;
     removeFromDock: (id: string) => void;
+
+    // API actions
+    fetchProjects: () => Promise<void>;
+    createProject: (title: string, description?: string) => Promise<ApiProject | null>;
+    deleteProject: (id: string) => Promise<boolean>;
+    fetchUserStats: () => Promise<void>;
 }
 
 export const useDashboardStore = create<DashboardState>((set, get) => ({
     view: 'ARCHIVE',
     activeProjectId: null,
-    dockItems: [], // Initially empty, or could pre-fill with recent
+    dockItems: [],
+    projects: [],
+    isLoading: false,
+    error: null,
+    remainingToday: 3,
+    dailyLimit: 3,
 
     openProject: (id: string) => {
-        const project = MOCK_PROJECTS.find(p => p.id === id);
+        const project = get().projects.find(p => p.id === id) || MOCK_PROJECTS.find(p => p.id === id);
         if (!project) return;
 
         set((state) => {
-            // Add to dock if not present
             const isInDock = state.dockItems.some(p => p.id === id);
             const newDockItems = isInDock ? state.dockItems : [...state.dockItems, project];
 
@@ -59,5 +99,98 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         set((state) => ({
             dockItems: state.dockItems.filter(p => p.id !== id)
         }));
-    }
+    },
+
+    fetchProjects: async () => {
+        set({ isLoading: true, error: null });
+        try {
+            const response = await fetch('/api/projects');
+            if (!response.ok) {
+                throw new Error('Failed to fetch projects');
+            }
+            const data = await response.json();
+            const projects = (data.projects || []).map(apiToLocal);
+            set({ projects, isLoading: false });
+        } catch (error) {
+            console.error('Error fetching projects:', error);
+            // Fallback to mock data in development
+            set({
+                projects: MOCK_PROJECTS,
+                isLoading: false,
+                error: error instanceof Error ? error.message : 'Failed to fetch projects'
+            });
+        }
+    },
+
+    createProject: async (title: string, description?: string) => {
+        try {
+            const response = await fetch('/api/projects', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, description }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to create project');
+            }
+
+            // Add to projects list and dock
+            const newProject = apiToLocal(data.project);
+            set((state) => ({
+                projects: [newProject, ...state.projects],
+                dockItems: [...state.dockItems, newProject],
+                remainingToday: data.remainingToday ?? state.remainingToday - 1,
+            }));
+
+            return data.project;
+        } catch (error) {
+            console.error('Error creating project:', error);
+            set({ error: error instanceof Error ? error.message : 'Failed to create project' });
+            return null;
+        }
+    },
+
+    deleteProject: async (id: string) => {
+        try {
+            const response = await fetch(`/api/projects/${id}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Failed to delete project');
+            }
+
+            // Remove from projects list and dock
+            set((state) => ({
+                projects: state.projects.filter(p => p.id !== id),
+                dockItems: state.dockItems.filter(p => p.id !== id),
+                activeProjectId: state.activeProjectId === id ? null : state.activeProjectId,
+                view: state.activeProjectId === id ? 'ARCHIVE' : state.view,
+            }));
+
+            return true;
+        } catch (error) {
+            console.error('Error deleting project:', error);
+            set({ error: error instanceof Error ? error.message : 'Failed to delete project' });
+            return false;
+        }
+    },
+
+    fetchUserStats: async () => {
+        try {
+            const response = await fetch('/api/user/stats');
+            if (!response.ok) return;
+
+            const data = await response.json();
+            set({
+                remainingToday: data.remainingToday ?? 3,
+                dailyLimit: data.dailyLimit ?? 3,
+            });
+        } catch (error) {
+            console.error('Error fetching user stats:', error);
+        }
+    },
 }));

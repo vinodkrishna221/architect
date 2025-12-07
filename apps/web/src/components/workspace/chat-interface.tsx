@@ -5,13 +5,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { QuestionForm } from "./question-form";
 import { cn } from "@/lib/utils";
 import { Bot, User } from "lucide-react";
+import { Message } from "@/lib/types";
 
-export interface Message {
-    id: string;
-    role: "user" | "assistant";
-    content: string;
-    timestamp: Date;
-}
+// Re-export for backward compatibility
+export type { Message };
 
 interface ChatInterfaceProps {
     messages: Message[];

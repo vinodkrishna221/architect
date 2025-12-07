@@ -14,9 +14,11 @@ import {
     Target,
     Rocket
 } from "lucide-react";
-import { GridBackground } from "@/components/shared/GridBackground";
+import { KineticBackground } from "@/components/ui/KineticBackground";
+import { AuroraBackground } from "@/components/ui/AuroraBackground";
 import { Button } from "@/components/ui/Button";
 import Navbar from "@/components/landing/Navbar";
+import Footer from "@/components/landing/Footer";
 
 // Enhanced animation variants with spring physics
 const springConfig = { stiffness: 100, damping: 15 };
@@ -57,34 +59,6 @@ const FloatingElement = ({
         }}
         transition={{
             duration,
-            delay,
-            repeat: Infinity,
-            ease: "easeInOut"
-        }}
-    />
-);
-
-// Animated gradient orb component
-const GradientOrb = ({
-    color,
-    size,
-    position,
-    delay = 0
-}: {
-    color: string;
-    size: string;
-    position: string;
-    delay?: number;
-}) => (
-    <motion.div
-        className={`absolute ${position} ${size} rounded-full ${color} blur-3xl opacity-30`}
-        animate={{
-            scale: [1, 1.2, 1],
-            x: [0, 30, -20, 0],
-            y: [0, -20, 30, 0],
-        }}
-        transition={{
-            duration: 25,
             delay,
             repeat: Infinity,
             ease: "easeInOut"
@@ -503,335 +477,307 @@ export default function RoadmapPage() {
     ];
 
     return (
-        <main ref={containerRef} className="min-h-screen bg-black text-white relative overflow-hidden">
-            <GridBackground />
-
-            {/* Animated Mesh Gradient Orbs */}
-            <div className="fixed inset-0 pointer-events-none z-0">
-                <GradientOrb
-                    color="bg-blue-600"
-                    size="w-96 h-96"
-                    position="top-20 -left-48"
-                    delay={0}
-                />
-                <GradientOrb
-                    color="bg-purple-600"
-                    size="w-80 h-80"
-                    position="top-1/3 -right-40"
-                    delay={5}
-                />
-                <GradientOrb
-                    color="bg-cyan-600"
-                    size="w-72 h-72"
-                    position="bottom-20 left-1/4"
-                    delay={10}
-                />
+        <div className="min-h-screen bg-black selection:bg-blue-500/30">
+            {/* Fixed Background Layer */}
+            <div className="fixed inset-0 z-0">
+                <AuroraBackground className="h-full">
+                    <KineticBackground />
+                </AuroraBackground>
             </div>
 
-            {/* Progress bar */}
-            <motion.div
-                className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-green-500 z-50 origin-left"
-                style={{ scaleX: scrollYProgress }}
-            />
+            {/* Scrollable Content */}
+            <main ref={containerRef} className="relative z-10 min-h-screen text-white w-full">
 
-            <Navbar />
-
-            {/* Hero Section with Parallax */}
-            <section className="relative pt-32 pb-20 overflow-hidden">
-                {/* Floating elements for parallax */}
-                <FloatingElement
-                    className="absolute top-40 left-10 w-20 h-20 rounded-full border border-blue-500/30 opacity-30"
-                    delay={0}
-                    duration={15}
-                />
-                <FloatingElement
-                    className="absolute top-60 right-20 w-16 h-16 rounded-lg border border-purple-500/30 opacity-20 rotate-45"
-                    delay={5}
-                    duration={20}
-                />
-                <FloatingElement
-                    className="absolute bottom-20 left-1/4 w-12 h-12 rounded-full bg-gradient-to-br from-green-500/10 to-transparent"
-                    delay={3}
-                    duration={18}
+                {/* Progress bar */}
+                <motion.div
+                    className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-green-500 z-50 origin-left"
+                    style={{ scaleX: scrollYProgress }}
                 />
 
-                <div className="container mx-auto px-4">
-                    <motion.div
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8 }}
-                        style={{ y: heroY, opacity: heroOpacity }}
-                        className="text-center max-w-4xl mx-auto relative z-10"
-                    >
+                <Navbar />
+
+                {/* Hero Section with Parallax */}
+                <section className="relative pt-32 pb-20 overflow-hidden">
+                    {/* Floating element for subtle parallax */}
+                    <FloatingElement
+                        className="absolute top-40 left-10 w-20 h-20 rounded-full border border-blue-500/30 opacity-20"
+                        delay={0}
+                        duration={20}
+                    />
+
+                    <div className="container mx-auto px-4">
                         <motion.div
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full text-sm text-zinc-400 mb-8"
-                            whileHover={{ scale: 1.05, borderColor: "rgba(255,255,255,0.2)" }}
-                        >
-                            <motion.div
-                                animate={{ rotate: 360 }}
-                                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                            >
-                                <Rocket className="w-4 h-4" />
-                            </motion.div>
-                            <span className="tracking-wide">The Future of AI-Powered Development</span>
-                        </motion.div>
-
-                        <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight tracking-tight">
-                            <motion.span
-                                className="bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-zinc-400 block"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.2 }}
-                            >
-                                Stop Hallucinating.
-                            </motion.span>
-                            <motion.span
-                                className="text-zinc-500 block"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.4 }}
-                            >
-                                Start Building Right.
-                            </motion.span>
-                        </h1>
-
-                        <motion.p
-                            className="text-xl text-zinc-400 max-w-2xl mx-auto mb-8 leading-relaxed"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.6 }}
-                        >
-                            The Architect is a <GradientText className="font-semibold">Production-Grade Interrogation Engine</GradientText> that
-                            prevents vibe coding. Deep-dive interrogation. Bulletproof specs. Component-driven implementation.
-                        </motion.p>
-
-                        <motion.div
-                            className="flex flex-col sm:flex-row items-center justify-center gap-4"
-                            initial={{ opacity: 0, y: 20 }}
+                            initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.8 }}
+                            transition={{ duration: 0.8 }}
+                            style={{ y: heroY, opacity: heroOpacity }}
+                            className="text-center max-w-4xl mx-auto relative z-10"
                         >
-                            <Link href="/waitlist">
-                                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
-                                    <Button variant="default" className="h-12 px-8 text-lg group relative overflow-hidden">
-                                        <span className="relative z-10 flex items-center">
-                                            Join the Waitlist
-                                            <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                                        </span>
-                                        <motion.div
-                                            className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity"
-                                        />
-                                    </Button>
-                                </motion.div>
-                            </Link>
-                            <Link href="#how-it-works">
-                                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
-                                    <Button variant="ghost" className="h-12 px-8 text-lg text-zinc-400 hover:text-white">
-                                        See How It Works
-                                    </Button>
-                                </motion.div>
-                            </Link>
-                        </motion.div>
-                    </motion.div>
-                </div>
-            </section>
-
-            {/* How It Works Section */}
-            <section id="how-it-works" className="relative py-24 border-t border-white/5">
-                {/* Section-specific ambient glow */}
-                <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-purple-500/10 rounded-full blur-3xl" />
-                </div>
-
-                <div className="container mx-auto px-4 relative z-10">
-                    <StickyHeader>
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            whileInView={{ opacity: 1 }}
-                            viewport={{ once: true }}
-                            className="text-center"
-                        >
-                            <h2 className="text-3xl md:text-5xl font-bold mb-2 tracking-tight">
-                                How The Architect Works
-                            </h2>
-                            <p className="text-zinc-400 text-lg max-w-2xl mx-auto">
-                                Three phases. Zero hallucinations. <GradientText>Production-ready blueprints.</GradientText>
-                            </p>
-                        </motion.div>
-                    </StickyHeader>
-
-                    <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mt-8">
-                        {phases.map((phase, i) => (
-                            <PhaseCard key={i} {...phase} delay={i * 0.15} />
-                        ))}
-                    </div>
-
-                    {/* Enhanced Workflow visualization */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        className="mt-16 flex items-center justify-center gap-4 flex-wrap"
-                    >
-                        {[
-                            { icon: Target, color: "text-blue-400", label: "Raw Idea" },
-                            { icon: Search, color: "text-purple-400", label: "10-30 Questions" },
-                            { icon: Layers, color: "text-green-400", label: "6 PRDs" },
-                            { icon: Sparkles, color: "text-yellow-400", label: "Production Code" }
-                        ].map((item, i) => (
                             <motion.div
-                                key={i}
-                                className="flex items-center gap-3"
-                                initial={{ opacity: 0, x: -20 }}
-                                whileInView={{ opacity: 1, x: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: i * 0.1 }}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full text-sm text-zinc-400 mb-8"
+                                whileHover={{ scale: 1.05, borderColor: "rgba(255,255,255,0.2)" }}
                             >
                                 <motion.div
-                                    className="flex items-center gap-3 px-4 py-2 bg-zinc-900/80 backdrop-blur border border-white/10 rounded-full"
-                                    whileHover={{ scale: 1.05, borderColor: "rgba(255,255,255,0.2)" }}
+                                    animate={{ rotate: 360 }}
+                                    transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
                                 >
-                                    <item.icon className={`w-4 h-4 ${item.color}`} />
-                                    <span className="text-sm text-zinc-300">{item.label}</span>
+                                    <Rocket className="w-4 h-4" />
                                 </motion.div>
-                                {i < 3 && (
-                                    <motion.div
-                                        animate={{ x: [0, 5, 0] }}
-                                        transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
-                                    >
-                                        <ArrowRight className="w-5 h-5 text-zinc-600" />
-                                    </motion.div>
-                                )}
+                                <span className="tracking-wide">The Future of AI-Powered Development</span>
                             </motion.div>
-                        ))}
-                    </motion.div>
-                </div>
-            </section>
 
-            {/* Roadmap Section */}
-            <section className="relative py-24 border-t border-white/5">
-                {/* Section-specific ambient glow */}
-                <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute top-0 left-0 w-full h-full">
-                        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
-                        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-green-500/10 rounded-full blur-3xl" />
-                    </div>
-                </div>
+                            <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight tracking-tight">
+                                <motion.span
+                                    className="bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-zinc-400 block"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.2 }}
+                                >
+                                    Stop Hallucinating.
+                                </motion.span>
+                                <motion.span
+                                    className="text-zinc-500 block"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.4 }}
+                                >
+                                    Start Building Right.
+                                </motion.span>
+                            </h1>
 
-                <div className="container mx-auto px-4 relative z-10">
-                    <StickyHeader>
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            whileInView={{ opacity: 1 }}
-                            viewport={{ once: true }}
-                            className="text-center"
-                        >
-                            <motion.div
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full text-sm text-blue-400 mb-4"
-                                whileHover={{ scale: 1.05 }}
+                            <motion.p
+                                className="text-xl text-zinc-400 max-w-2xl mx-auto mb-8 leading-relaxed"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.6 }}
                             >
-                                <motion.div
-                                    animate={{ rotate: [0, 15, -15, 0] }}
-                                    transition={{ duration: 2, repeat: Infinity }}
-                                >
-                                    <Sparkles className="w-4 h-4" />
-                                </motion.div>
-                                <span className="tracking-wide">Product Roadmap</span>
-                            </motion.div>
-                            <h2 className="text-3xl md:text-5xl font-bold mb-2 tracking-tight">
-                                What We&apos;re Building
-                            </h2>
-                            <p className="text-zinc-400 text-lg max-w-2xl mx-auto">
-                                Our vision for <GradientText>revolutionizing</GradientText> how developers build software with AI.
-                            </p>
-                        </motion.div>
-                    </StickyHeader>
+                                The Architect is a <GradientText className="font-semibold">Production-Grade Interrogation Engine</GradientText> that
+                                prevents vibe coding. Deep-dive interrogation. Bulletproof specs. Component-driven implementation.
+                            </motion.p>
 
-                    {/* Timeline with enhanced visuals */}
-                    <div className="max-w-4xl mx-auto space-y-8 mt-8">
-                        {roadmapItems.map((item, i) => (
-                            <RoadmapMilestone key={i} {...item} index={i} />
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* CTA Section */}
-            <section className="relative py-24 border-t border-white/5">
-                {/* Section-specific ambient glow */}
-                <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-green-500/20 rounded-full blur-3xl" />
-                </div>
-
-                <div className="container mx-auto px-4 relative z-10">
-                    <motion.div
-                        initial={{ opacity: 0, y: 30 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        className="relative max-w-3xl mx-auto text-center"
-                    >
-                        <motion.div
-                            className="relative bg-zinc-900/80 backdrop-blur-xl border border-white/10 rounded-3xl p-12 overflow-hidden"
-                            whileHover={{ borderColor: "rgba(255,255,255,0.2)" }}
-                        >
-                            {/* Animated border gradient */}
                             <motion.div
-                                className="absolute -inset-0.5 rounded-3xl opacity-30"
-                                style={{
-                                    background: "conic-gradient(from 0deg, #3b82f6, #8b5cf6, #10b981, #3b82f6)",
-                                }}
-                                animate={{ rotate: 360 }}
-                                transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                            />
-
-                            {/* Content */}
-                            <div className="relative z-10 bg-zinc-900/90 rounded-3xl p-8 -m-4">
-                                <motion.h2
-                                    className="text-3xl md:text-4xl font-bold mb-4 tracking-tight"
-                                    initial={{ opacity: 0, y: 10 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                >
-                                    Ready to <GradientText>Stop Hallucinating</GradientText>?
-                                </motion.h2>
-                                <p className="text-zinc-400 text-lg mb-8 max-w-xl mx-auto">
-                                    Join the waitlist and be among the first to experience production-grade AI development.
-                                </p>
+                                className="flex flex-col sm:flex-row items-center justify-center gap-4"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.8 }}
+                            >
                                 <Link href="/waitlist">
-                                    <motion.div
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        className="inline-block"
-                                    >
-                                        <Button variant="default" className="h-14 px-10 text-lg group relative overflow-hidden">
+                                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
+                                        <Button variant="default" className="h-12 px-8 text-lg group relative overflow-hidden">
                                             <span className="relative z-10 flex items-center">
                                                 Join the Waitlist
                                                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                                             </span>
+                                            <motion.div
+                                                className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            />
                                         </Button>
                                     </motion.div>
                                 </Link>
-                                <motion.p
-                                    className="mt-6 text-sm text-zinc-500"
-                                    initial={{ opacity: 0 }}
-                                    whileInView={{ opacity: 1 }}
-                                    viewport={{ once: true }}
-                                    transition={{ delay: 0.3 }}
-                                >
-                                    Early access • No credit card required • Be part of the revolution
-                                </motion.p>
-                            </div>
+                                <Link href="#how-it-works">
+                                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
+                                        <Button variant="ghost" className="h-12 px-8 text-lg text-zinc-400 hover:text-white">
+                                            See How It Works
+                                        </Button>
+                                    </motion.div>
+                                </Link>
+                            </motion.div>
                         </motion.div>
-                    </motion.div>
-                </div>
-            </section>
+                    </div>
+                </section>
 
-            {/* Footer */}
-            <footer className="border-t border-white/5 py-8">
-                <div className="container mx-auto px-4 text-center text-zinc-500 text-sm">
-                    <p>© 2025 The Architect. Building the future of AI-powered development.</p>
-                </div>
-            </footer>
-        </main>
+                {/* How It Works Section */}
+                <section id="how-it-works" className="relative py-24 border-t border-white/5">
+                    {/* Section-specific ambient glow */}
+                    <div className="absolute inset-0 pointer-events-none">
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-purple-500/10 rounded-full blur-3xl" />
+                    </div>
+
+                    <div className="container mx-auto px-4 relative z-10">
+                        <StickyHeader>
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                whileInView={{ opacity: 1 }}
+                                viewport={{ once: true }}
+                                className="text-center"
+                            >
+                                <h2 className="text-3xl md:text-5xl font-bold mb-2 tracking-tight">
+                                    How The Architect Works
+                                </h2>
+                                <p className="text-zinc-400 text-lg max-w-2xl mx-auto">
+                                    Three phases. Zero hallucinations. Production-ready blueprints.
+                                </p>
+                            </motion.div>
+                        </StickyHeader>
+
+                        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mt-8">
+                            {phases.map((phase, i) => (
+                                <PhaseCard key={i} {...phase} delay={i * 0.15} />
+                            ))}
+                        </div>
+
+                        {/* Enhanced Workflow visualization */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="mt-16 flex items-center justify-center gap-4 flex-wrap"
+                        >
+                            {[
+                                { icon: Target, color: "text-blue-400", label: "Raw Idea" },
+                                { icon: Search, color: "text-purple-400", label: "10-30 Questions" },
+                                { icon: Layers, color: "text-green-400", label: "6 PRDs" },
+                                { icon: Sparkles, color: "text-yellow-400", label: "Production Code" }
+                            ].map((item, i) => (
+                                <motion.div
+                                    key={i}
+                                    className="flex items-center gap-3"
+                                    initial={{ opacity: 0, x: -20 }}
+                                    whileInView={{ opacity: 1, x: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: i * 0.1 }}
+                                >
+                                    <motion.div
+                                        className="flex items-center gap-3 px-4 py-2 bg-zinc-900/80 backdrop-blur border border-white/10 rounded-full"
+                                        whileHover={{ scale: 1.05, borderColor: "rgba(255,255,255,0.2)" }}
+                                    >
+                                        <item.icon className={`w-4 h-4 ${item.color}`} />
+                                        <span className="text-sm text-zinc-300">{item.label}</span>
+                                    </motion.div>
+                                    {i < 3 && (
+                                        <motion.div
+                                            animate={{ x: [0, 5, 0] }}
+                                            transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
+                                        >
+                                            <ArrowRight className="w-5 h-5 text-zinc-600" />
+                                        </motion.div>
+                                    )}
+                                </motion.div>
+                            ))}
+                        </motion.div>
+                    </div>
+                </section>
+
+                {/* Roadmap Section */}
+                <section className="relative py-24 border-t border-white/5">
+                    {/* Section-specific ambient glow */}
+                    <div className="absolute inset-0 pointer-events-none">
+                        <div className="absolute top-0 left-0 w-full h-full">
+                            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
+                            <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-green-500/10 rounded-full blur-3xl" />
+                        </div>
+                    </div>
+
+                    <div className="container mx-auto px-4 relative z-10">
+                        <StickyHeader>
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                whileInView={{ opacity: 1 }}
+                                viewport={{ once: true }}
+                                className="text-center"
+                            >
+                                <motion.div
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full text-sm text-blue-400 mb-4"
+                                    whileHover={{ scale: 1.05 }}
+                                >
+                                    <motion.div
+                                        animate={{ rotate: [0, 15, -15, 0] }}
+                                        transition={{ duration: 2, repeat: Infinity }}
+                                    >
+                                        <Sparkles className="w-4 h-4" />
+                                    </motion.div>
+                                    <span className="tracking-wide">Product Roadmap</span>
+                                </motion.div>
+                                <h2 className="text-3xl md:text-5xl font-bold mb-2 tracking-tight">
+                                    What We&apos;re Building
+                                </h2>
+                                <p className="text-zinc-400 text-lg max-w-2xl mx-auto">
+                                    Our vision for revolutionizing how developers build software with AI.
+                                </p>
+                            </motion.div>
+                        </StickyHeader>
+
+                        {/* Timeline with enhanced visuals */}
+                        <div className="max-w-4xl mx-auto space-y-8 mt-8">
+                            {roadmapItems.map((item, i) => (
+                                <RoadmapMilestone key={i} {...item} index={i} />
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                {/* CTA Section */}
+                <section className="relative py-24 border-t border-white/5">
+                    {/* Section-specific ambient glow */}
+                    <div className="absolute inset-0 pointer-events-none">
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-green-500/20 rounded-full blur-3xl" />
+                    </div>
+
+                    <div className="container mx-auto px-4 relative z-10">
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="relative max-w-3xl mx-auto text-center"
+                        >
+                            <motion.div
+                                className="relative bg-zinc-900/80 backdrop-blur-xl border border-white/10 rounded-3xl p-12 overflow-hidden"
+                                whileHover={{ borderColor: "rgba(255,255,255,0.2)" }}
+                            >
+                                {/* Animated border gradient */}
+                                <motion.div
+                                    className="absolute -inset-0.5 rounded-3xl opacity-30"
+                                    style={{
+                                        background: "conic-gradient(from 0deg, #3b82f6, #8b5cf6, #10b981, #3b82f6)",
+                                    }}
+                                    animate={{ rotate: 360 }}
+                                    transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                                />
+
+                                {/* Content */}
+                                <div className="relative z-10 bg-zinc-900/90 rounded-3xl p-8 -m-4">
+                                    <motion.h2
+                                        className="text-3xl md:text-4xl font-bold mb-4 tracking-tight"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        whileInView={{ opacity: 1, y: 0 }}
+                                        viewport={{ once: true }}
+                                    >
+                                        Ready to <GradientText>Stop Hallucinating</GradientText>?
+                                    </motion.h2>
+                                    <p className="text-zinc-400 text-lg mb-8 max-w-xl mx-auto">
+                                        Join the waitlist and be among the first to experience production-grade AI development.
+                                    </p>
+                                    <Link href="/waitlist">
+                                        <motion.div
+                                            whileHover={{ scale: 1.05 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            className="inline-block"
+                                        >
+                                            <Button variant="default" className="h-14 px-10 text-lg group relative overflow-hidden">
+                                                <span className="relative z-10 flex items-center">
+                                                    Join the Waitlist
+                                                    <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                                </span>
+                                            </Button>
+                                        </motion.div>
+                                    </Link>
+                                    <motion.p
+                                        className="mt-6 text-sm text-zinc-500"
+                                        initial={{ opacity: 0 }}
+                                        whileInView={{ opacity: 1 }}
+                                        viewport={{ once: true }}
+                                        transition={{ delay: 0.3 }}
+                                    >
+                                        Early access • No credit card required • Be part of the revolution
+                                    </motion.p>
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    </div>
+                </section>
+
+                <Footer />
+            </main>
+        </div>
     );
 }

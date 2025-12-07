@@ -2,83 +2,68 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
-import { ChatInterface, Message } from "@/components/workspace/chat-interface";
-import { ArtifactViewer, ArtifactFile } from "@/components/workspace/artifact-viewer";
-import { Dock } from "@/components/dashboard/layout/Dock";
-import { motion, AnimatePresence } from "framer-motion";
-import { GripVertical, Maximize2, Minimize2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { GripVertical, Maximize2, Minimize2, MessageSquare, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Dock } from "@/components/dashboard/layout/Dock";
+import {
+    InterrogationChat,
+    BlueprintViewer,
+    GenerateButton,
+    useWorkspaceStore,
+} from "@/features/workspace";
 
-type FocusMode = "split" | "chat" | "artifact";
+type FocusMode = "split" | "chat" | "blueprint";
+type MobileTab = "chat" | "blueprints";
 
 export default function WorkspacePage() {
     const params = useParams();
-    const [messages, setMessages] = useState<Message[]>([
-        {
-            id: "1",
-            role: "assistant",
-            content: "Welcome to the Architect Workspace. I am ready to help you build your vision. What are we building today?",
-            timestamp: new Date(),
-        },
-    ]);
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [files, setFiles] = useState<ArtifactFile[]>([
-        { id: "1", name: "System Architecture.pdf", url: "#", type: "pdf" },
-        { id: "2", name: "Database Schema.pdf", url: "#", type: "pdf" },
-    ]);
+    const projectId = params.id as string;
 
     // Layout State
-    const [leftWidth, setLeftWidth] = useState(40); // Percentage
+    const [leftWidth, setLeftWidth] = useState(45);
     const [isDragging, setIsDragging] = useState(false);
     const [focusMode, setFocusMode] = useState<FocusMode>("split");
+    const [mobileTab, setMobileTab] = useState<MobileTab>("chat");
+    const [isMobile, setIsMobile] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    const handleSendMessage = async (text: string) => {
-        const userMsg: Message = {
-            id: Date.now().toString(),
-            role: "user",
-            content: text,
-            timestamp: new Date(),
+    // Workspace store state
+    const { isComplete, blueprints, reset } = useWorkspaceStore();
+
+    // Detect mobile screen
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768);
         };
-        setMessages((prev) => [...prev, userMsg]);
-        setIsProcessing(true);
+        checkMobile();
+        window.addEventListener("resize", checkMobile);
+        return () => window.removeEventListener("resize", checkMobile);
+    }, []);
 
-        timeoutRef.current = setTimeout(() => {
-            const aiMsg: Message = {
-                id: (Date.now() + 1).toString(),
-                role: "assistant",
-                content: `I've generated a new architectural diagram for "${text}". You can view it in the artifacts panel.`,
-                timestamp: new Date(),
-            };
-            setMessages((prev) => [...prev, aiMsg]);
-            setIsProcessing(false);
+    // Reset workspace state when project changes
+    useEffect(() => {
+        reset();
+    }, [projectId, reset]);
 
-            const newFile: ArtifactFile = {
-                id: Date.now().toString(),
-                name: `Specification - ${text.slice(0, 10)}...pdf`,
-                url: "#",
-                type: "pdf"
-            };
-            setFiles(prev => [...prev, newFile]);
-        }, 2000);
-    };
-
-    // Resize Handlers
+    // Resize Handlers (desktop only)
     const handleMouseDown = (e: React.MouseEvent) => {
+        if (isMobile) return;
         e.preventDefault();
         setIsDragging(true);
     };
 
     useEffect(() => {
+        if (isMobile) return;
+
         const handleMouseMove = (e: MouseEvent) => {
             if (!isDragging || !containerRef.current) return;
 
             const containerRect = containerRef.current.getBoundingClientRect();
             const newLeftWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
 
-            // Clamp between 20% and 80%
-            setLeftWidth(Math.min(Math.max(newLeftWidth, 20), 80));
+            // Clamp between 25% and 75%
+            setLeftWidth(Math.min(Math.max(newLeftWidth, 25), 75));
         };
 
         const handleMouseUp = () => {
@@ -94,26 +79,85 @@ export default function WorkspacePage() {
             document.removeEventListener("mousemove", handleMouseMove);
             document.removeEventListener("mouseup", handleMouseUp);
         };
-    }, [isDragging]);
+    }, [isDragging, isMobile]);
 
-    // Cleanup timeout on unmount
-    useEffect(() => {
-        return () => {
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-            }
-        };
-    }, []);
-
-    // Determine actual widths based on focus mode
+    // Determine actual widths based on focus mode (desktop)
     const getPanelStyles = () => {
         if (focusMode === "chat") return { left: "100%", right: "0%" };
-        if (focusMode === "artifact") return { left: "0%", right: "100%" };
+        if (focusMode === "blueprint") return { left: "0%", right: "100%" };
         return { left: `${leftWidth}%`, right: `${100 - leftWidth}%` };
     };
 
     const styles = getPanelStyles();
 
+    // Show blueprints panel after interview is complete and we have blueprints
+    const showBlueprints = isComplete || blueprints.length > 0;
+
+    // Mobile Layout
+    if (isMobile) {
+        return (
+            <div className="flex flex-col h-screen w-full bg-black overflow-hidden font-sans relative">
+                {/* Mobile Tab Bar */}
+                <div className="flex border-b border-white/10 bg-black/50 backdrop-blur-sm z-20 shrink-0">
+                    <button
+                        onClick={() => setMobileTab("chat")}
+                        className={cn(
+                            "flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors",
+                            mobileTab === "chat"
+                                ? "text-white border-b-2 border-blue-500 bg-white/5"
+                                : "text-white/50"
+                        )}
+                    >
+                        <MessageSquare className="w-4 h-4" />
+                        Interview
+                    </button>
+                    <button
+                        onClick={() => setMobileTab("blueprints")}
+                        disabled={!showBlueprints}
+                        className={cn(
+                            "flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors",
+                            mobileTab === "blueprints"
+                                ? "text-white border-b-2 border-blue-500 bg-white/5"
+                                : showBlueprints
+                                    ? "text-white/50"
+                                    : "text-white/20 cursor-not-allowed"
+                        )}
+                    >
+                        <FileText className="w-4 h-4" />
+                        Blueprints
+                        {blueprints.length > 0 && (
+                            <span className="bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                                {blueprints.filter(b => b.status === "complete").length}
+                            </span>
+                        )}
+                    </button>
+                </div>
+
+                {/* Mobile Content */}
+                <div className="flex-1 overflow-hidden relative">
+                    {mobileTab === "chat" ? (
+                        <div className="h-full flex flex-col">
+                            <div className="flex-1 overflow-hidden">
+                                <InterrogationChat projectId={projectId} />
+                            </div>
+                            {isComplete && (
+                                <div className="p-4 border-t border-white/5 bg-black/20">
+                                    <GenerateButton />
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <BlueprintViewer />
+                    )}
+                </div>
+
+                {/* Dock */}
+                <Dock position="top" />
+            </div>
+        );
+    }
+
+    // Desktop Layout
     return (
         <div
             ref={containerRef}
@@ -127,8 +171,9 @@ export default function WorkspacePage() {
                 initial={false}
                 animate={{ width: styles.left, opacity: styles.left === "0%" ? 0 : 1 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="h-full border-r border-white/5 z-10 relative overflow-hidden pb-24"
+                className="h-full border-r border-white/5 z-10 relative overflow-hidden flex flex-col"
             >
+                {/* Maximize/Minimize Button */}
                 <div className="absolute top-4 right-4 z-50">
                     <button
                         onClick={() => setFocusMode(focusMode === "chat" ? "split" : "chat")}
@@ -137,15 +182,22 @@ export default function WorkspacePage() {
                         {focusMode === "chat" ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                     </button>
                 </div>
-                <ChatInterface
-                    messages={messages}
-                    onSendMessage={handleSendMessage}
-                    isProcessing={isProcessing}
-                />
+
+                {/* Interrogation Chat */}
+                <div className="flex-1 overflow-hidden">
+                    <InterrogationChat projectId={projectId} />
+                </div>
+
+                {/* Generate Button - appears when interview is complete */}
+                {isComplete && (
+                    <div className="p-4 border-t border-white/5 bg-black/20">
+                        <GenerateButton />
+                    </div>
+                )}
             </motion.div>
 
             {/* Resizer Handle */}
-            {focusMode === "split" && (
+            {focusMode === "split" && showBlueprints && (
                 <div
                     className="w-1 h-full bg-transparent hover:bg-blue-500/50 active:bg-blue-500 cursor-col-resize z-20 absolute transition-colors flex items-center justify-center group"
                     style={{ left: `${leftWidth}%`, transform: "translateX(-50%)" }}
@@ -157,26 +209,31 @@ export default function WorkspacePage() {
                 </div>
             )}
 
-            {/* Right Panel - Artifact */}
-            <motion.div
-                initial={false}
-                animate={{ width: styles.right, opacity: styles.right === "0%" ? 0 : 1 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="h-full bg-[#0F0F0F] relative overflow-hidden pb-24"
-            >
-                <div className="absolute top-4 right-4 z-50 flex gap-2">
-                    <button
-                        onClick={() => setFocusMode(focusMode === "artifact" ? "split" : "artifact")}
-                        className="p-2 bg-black/50 backdrop-blur text-white/40 hover:text-white rounded-lg transition-colors"
-                    >
-                        {focusMode === "artifact" ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-                    </button>
-                </div>
-                <ArtifactViewer files={files} title={`Project #${params.id}`} />
-            </motion.div>
+            {/* Right Panel - Blueprint Viewer */}
+            {showBlueprints && (
+                <motion.div
+                    initial={false}
+                    animate={{ width: styles.right, opacity: styles.right === "0%" ? 0 : 1 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="h-full bg-[#0F0F0F] relative overflow-hidden"
+                >
+                    {/* Maximize/Minimize Button */}
+                    <div className="absolute top-4 right-4 z-50 flex gap-2">
+                        <button
+                            onClick={() => setFocusMode(focusMode === "blueprint" ? "split" : "blueprint")}
+                            className="p-2 bg-black/50 backdrop-blur text-white/40 hover:text-white rounded-lg transition-colors"
+                        >
+                            {focusMode === "blueprint" ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                        </button>
+                    </div>
+
+                    <BlueprintViewer />
+                </motion.div>
+            )}
 
             {/* Dock */}
             <Dock position="top" />
         </div>
     );
 }
+

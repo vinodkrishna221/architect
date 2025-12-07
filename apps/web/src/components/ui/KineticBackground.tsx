@@ -29,8 +29,8 @@ export const KineticBackground = ({ children }: { children?: React.ReactNode }) 
         let kineticEnergy = 0;
 
         // Configuration
-        let gridSize = 35; // Increased from 30 for better performance
-        const cubeSize = 14;
+        let gridSize = 30; // Further reduced for denser grid
+        const cubeSize = 10; // Smaller cubes (was 14)
         const influenceRadius = 150; // Reduced from 250 as requested
         const decayRate = 0.94;
 
@@ -223,7 +223,7 @@ export const KineticBackground = ({ children }: { children?: React.ReactNode }) 
     }, []);
 
     return (
-        <div className="relative w-full h-screen overflow-hidden bg-transparent">
+        <div className="relative w-full min-h-screen bg-transparent">
             <canvas
                 ref={canvasRef}
                 className="absolute top-0 left-0 w-full h-full z-0 cursor-none"

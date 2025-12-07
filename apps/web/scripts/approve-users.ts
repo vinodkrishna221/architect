@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import crypto from "crypto";
 import { Waitlist } from "../src/lib/models";
 import { sendEmail } from "./email-helper";
 import * as dotenv from "dotenv";
@@ -30,8 +31,8 @@ async function approveUser(email: string) {
         //     process.exit(0);
         // }
 
-        // Generate 6-digit random code
-        const accessCode = Math.floor(100000 + Math.random() * 900000).toString();
+        // Security: Generate cryptographically secure alphanumeric code (8 chars = ~47 bits entropy)
+        const accessCode = crypto.randomBytes(4).toString('hex').toUpperCase();
         const hashedCode = await bcrypt.hash(accessCode, 10);
 
         user.status = "APPROVED";

@@ -12,16 +12,16 @@ export default function Navbar() {
                 </Link>
 
                 <div className="hidden md:flex items-center gap-8 text-xs font-medium tracking-widest uppercase text-zinc-400">
-                    <Link href="/roadmap" className="hover:text-white transition-colors block px-2 py-1">
+                    <MagneticLink href="/roadmap" className="hover:text-white transition-colors block px-2 py-1">
                         Roadmap
-                    </Link>
-                    <Link href="/changelog" className="hover:text-white transition-colors block px-2 py-1">
+                    </MagneticLink>
+                    <MagneticLink href="/changelog" className="hover:text-white transition-colors block px-2 py-1">
                         Changelog
-                    </Link>
-                    <MagneticLink href="#features" className="hover:text-white transition-colors block px-2 py-1">
+                    </MagneticLink>
+                    <MagneticLink href="/features" className="hover:text-white transition-colors block px-2 py-1">
                         Features
                     </MagneticLink>
-                    <MagneticLink href="#about" className="hover:text-white transition-colors block px-2 py-1">
+                    <MagneticLink href="/about" className="hover:text-white transition-colors block px-2 py-1">
                         About
                     </MagneticLink>
                 </div>

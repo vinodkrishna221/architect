@@ -7,6 +7,7 @@ import { ProjectIcon } from "../shared/ProjectIcon";
 import { LayoutGrid, Plus, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { CreateProjectModal } from "../CreateProjectModal";
 
 interface DockProps {
     position?: "bottom" | "top";
@@ -16,65 +17,66 @@ export function Dock({ position = "bottom" }: DockProps) {
     const mouseX = useMotionValue(Infinity);
     const { dockItems, activeProjectId, openProject, minimizeProject } = useDashboardStore();
     const router = useRouter();
-
-    const handleNewProject = () => {
-        const newProjectId = Date.now().toString();
-        router.push(`/project/${newProjectId}`);
-    };
+    const [showCreateModal, setShowCreateModal] = useState(false);
 
     return (
-        <motion.div
-            onMouseMove={(e) => mouseX.set(e.pageX)}
-            onMouseLeave={() => mouseX.set(Infinity)}
-            className={cn(
-                "fixed left-1/2 -translate-x-1/2 h-16 px-4 pb-3 rounded-2xl bg-black/80 backdrop-blur-2xl border border-white/10 ring-1 ring-white/5 flex items-end gap-4 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.8)] z-50",
-                position === "bottom" ? "bottom-6" : "top-6"
-            )}
-        >
-            {/* Top Highlight */}
-            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+        <>
+            <motion.div
+                onMouseMove={(e) => mouseX.set(e.pageX)}
+                onMouseLeave={() => mouseX.set(Infinity)}
+                className={cn(
+                    "fixed left-1/2 -translate-x-1/2 h-16 px-4 pb-3 rounded-2xl bg-black/80 backdrop-blur-2xl border border-white/10 ring-1 ring-white/5 flex items-end gap-4 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.8)] z-50",
+                    position === "bottom" ? "bottom-6" : "top-6"
+                )}
+            >
+                {/* Top Highlight */}
+                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
 
-            {/* Home / Archive */}
-            <DockItem mouseX={mouseX} onClick={minimizeProject} isActive={!activeProjectId} label="Home" position={position}>
-                <div className="w-full h-full flex items-center justify-center bg-zinc-800 rounded-xl border border-white/10">
-                    <LayoutGrid className="w-5 h-5 text-zinc-400" />
-                </div>
-            </DockItem>
-
-            {/* Glass Divider */}
-            <div className="h-8 w-1.5 rounded-full bg-white/5 border-x border-white/5 mb-2 mx-1" />
-
-            {/* Active Projects */}
-            {dockItems.map((project) => (
-                <DockItem
-                    key={project.id}
-                    mouseX={mouseX}
-                    onClick={() => openProject(project.id)}
-                    isActive={activeProjectId === project.id}
-                    label={project.title}
-                    position={position}
-                >
-                    <ProjectIcon id={project.id} className="w-full h-full rounded-xl" />
+                {/* Home / Archive */}
+                <DockItem mouseX={mouseX} onClick={minimizeProject} isActive={!activeProjectId} label="Home" position={position}>
+                    <div className="w-full h-full flex items-center justify-center bg-zinc-800 rounded-xl border border-white/10">
+                        <LayoutGrid className="w-5 h-5 text-zinc-400" />
+                    </div>
                 </DockItem>
-            ))}
 
-            {/* New Project */}
-            <DockItem mouseX={mouseX} onClick={handleNewProject} label="New Project" position={position}>
-                <div className="w-full h-full flex items-center justify-center bg-zinc-900/50 rounded-xl border border-blue-500/30 border-dashed hover:border-solid hover:border-blue-400 hover:bg-blue-500/10 transition-all duration-300 group-hover:shadow-[0_0_15px_rgba(59,130,246,0.3)]">
-                    <Plus className="w-5 h-5 text-blue-400/70 group-hover:text-blue-400" />
-                </div>
-            </DockItem>
+                {/* Glass Divider */}
+                <div className="h-8 w-1.5 rounded-full bg-white/5 border-x border-white/5 mb-2 mx-1" />
 
-            {/* Glass Divider */}
-            <div className="h-8 w-1.5 rounded-full bg-white/5 border-x border-white/5 mb-2 mx-1" />
+                {/* Active Projects */}
+                {dockItems.map((project) => (
+                    <DockItem
+                        key={project.id}
+                        mouseX={mouseX}
+                        onClick={() => openProject(project.id)}
+                        isActive={activeProjectId === project.id}
+                        label={project.title}
+                        position={position}
+                    >
+                        <ProjectIcon id={project.id} className="w-full h-full rounded-xl" />
+                    </DockItem>
+                ))}
 
-            {/* Profile */}
-            <DockItem mouseX={mouseX} onClick={() => router.push("/profile")} label="Profile" position={position}>
-                <div className="w-full h-full flex items-center justify-center bg-zinc-800 rounded-xl border border-white/10 hover:bg-zinc-700 transition-colors">
-                    <User className="w-5 h-5 text-zinc-400 group-hover:text-white transition-colors" />
-                </div>
-            </DockItem>
-        </motion.div>
+                {/* New Project */}
+                <DockItem mouseX={mouseX} onClick={() => setShowCreateModal(true)} label="New Project" position={position}>
+                    <div className="w-full h-full flex items-center justify-center bg-zinc-900/50 rounded-xl border border-blue-500/30 border-dashed hover:border-solid hover:border-blue-400 hover:bg-blue-500/10 transition-all duration-300 group-hover:shadow-[0_0_15px_rgba(59,130,246,0.3)]">
+                        <Plus className="w-5 h-5 text-blue-400/70 group-hover:text-blue-400" />
+                    </div>
+                </DockItem>
+
+                {/* Glass Divider */}
+                <div className="h-8 w-1.5 rounded-full bg-white/5 border-x border-white/5 mb-2 mx-1" />
+
+                {/* Profile */}
+                <DockItem mouseX={mouseX} onClick={() => router.push("/profile")} label="Profile" position={position}>
+                    <div className="w-full h-full flex items-center justify-center bg-zinc-800 rounded-xl border border-white/10 hover:bg-zinc-700 transition-colors">
+                        <User className="w-5 h-5 text-zinc-400 group-hover:text-white transition-colors" />
+                    </div>
+                </DockItem>
+            </motion.div>
+
+            {/* Create Project Modal */}
+            <CreateProjectModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} />
+        </>
     );
 }
 

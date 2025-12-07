@@ -2,3 +2,8 @@ the-architect-env-keys.txt
 node_modules
 .env
 .DS_Store
+
+# Internal documentation (not for repo)
+build_guide.md
+implementation_plan.md
+phase_checklist.md

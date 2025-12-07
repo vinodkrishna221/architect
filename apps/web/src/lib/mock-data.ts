@@ -1,4 +1,5 @@
-export type ProjectStatus = 'DRAFT' | 'GENERATING' | 'COMPLETED' | 'AWAITING_ANSWERS';
+import { ProjectStatus } from "./types";
+export type { ProjectStatus };
 
 export interface Project {
     id: string;

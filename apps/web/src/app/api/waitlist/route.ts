@@ -1,7 +1,17 @@
 import { NextResponse } from 'next/server';
 import mongoose from 'mongoose';
+import { z } from 'zod';
 import { Waitlist } from '@/lib/models';
 import { checkRateLimit, getClientIP } from '@/lib/rate-limiter';
+
+// Security: Zod schema for input validation
+const waitlistSchema = z.object({
+    email: z.string().email("Invalid email address").max(254),
+    name: z.string().max(100).optional(),
+    jobRole: z.string().max(50).optional(), // User's profession (Developer, Designer, etc.)
+    referralSource: z.string().max(100).optional(),
+    reason: z.string().max(500).optional(),
+});
 
 // Ensure mongoose connection
 async function connectDB() {
@@ -16,6 +26,15 @@ async function connectDB() {
 
 export async function POST(request: Request) {
     try {
+        // Security: Request body size check
+        const contentLength = request.headers.get('content-length');
+        if (contentLength && parseInt(contentLength) > 10000) {
+            return NextResponse.json(
+                { error: 'Request body too large' },
+                { status: 413 }
+            );
+        }
+
         // Rate limiting check
         const ip = getClientIP(request);
         const rateLimit = checkRateLimit(ip, 3, 60 * 60 * 1000); // 3 per hour
@@ -37,15 +56,18 @@ export async function POST(request: Request) {
         }
 
         const body = await request.json();
-        const { email, name, role, referralSource, reason } = body;
 
-        // Validate email
-        if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+        // Security: Validate with Zod schema
+        const validation = waitlistSchema.safeParse(body);
+        if (!validation.success) {
+            const firstIssue = validation.error.issues[0];
             return NextResponse.json(
-                { error: 'Invalid email address' },
+                { error: firstIssue?.message || 'Invalid input' },
                 { status: 400 }
             );
         }
+
+        const { email, name, jobRole, referralSource, reason } = validation.data;
 
         await connectDB();
 
@@ -53,7 +75,7 @@ export async function POST(request: Request) {
         const entry = await Waitlist.create({
             email: email.toLowerCase().trim(),
             name: name?.trim() || undefined,
-            role: role || undefined,
+            jobRole: jobRole || undefined,
             referralSource: referralSource || undefined,
             reason: reason?.trim() || undefined,
             status: 'PENDING',

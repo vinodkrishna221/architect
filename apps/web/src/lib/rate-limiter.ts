@@ -71,14 +71,21 @@ export function checkRateLimit(
 
 /**
  * Get IP address from request headers
+ * Security: Only trust the leftmost IP (client's original IP) in X-Forwarded-For
+ * and validate it's a valid IP format to prevent header injection
  */
 export function getClientIP(request: Request): string {
     const forwarded = request.headers.get("x-forwarded-for");
     if (forwarded) {
-        return forwarded.split(",")[0].trim();
+        // Take only the first (leftmost) IP - this is the original client
+        const firstIP = forwarded.split(",")[0].trim();
+        // Basic validation: check if it looks like an IP
+        if (/^[\d.:a-fA-F]+$/.test(firstIP)) {
+            return firstIP;
+        }
     }
     const realIP = request.headers.get("x-real-ip");
-    if (realIP) {
+    if (realIP && /^[\d.:a-fA-F]+$/.test(realIP)) {
         return realIP;
     }
     return "unknown";
