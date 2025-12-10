@@ -53,7 +53,7 @@ export async function POST(req: Request) {
             // Deduct credits for user message (0.1 credits per message)
             if (userMessage) {
                 const creditResult = await deductCredits(
-                    session.user.id,
+                    session.user.email!,
                     CREDIT_COSTS.MESSAGE,
                     "interview_message"
                 );

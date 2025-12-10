@@ -4,9 +4,15 @@ import { sendEmail } from './email-helper';
 import * as dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 
-const version = 'v1.2.0';
-const title = 'Credit System & Chat Persistence';
+const version = 'v1.3.0';
+const title = 'Feedback System & User Engagement';
 const content = `### ✨ New Features
+
+**Feedback Page**
+- New /feedback page for user submissions
+- Submit general feedback, feature requests, or bug reports
+- Priority levels for bug reporting
+- Rate-limited to prevent spam (5 per day)
 
 **Credit System**
 - Introduced a new credit-based usage system
@@ -29,7 +35,8 @@ const content = `### ✨ New Features
 
 ### 🎨 UI Improvements
 - Added "Coming Soon" badge for upcoming AI edit feature
-- Beautiful pricing cards with smooth animations`;
+- Beautiful pricing cards with smooth animations
+- Feedback page with tabbed type selector`;
 
 async function release() {
     if (!process.env.MONGODB_URI) {

@@ -19,6 +19,8 @@ const WaitlistSchema = new Schema({
     createdAt: { type: Date, default: Date.now },
     lastLoginAttempt: { type: Date },
     accessCode: { type: String }, // Hashed access code for login
+    // Credit system - 30 credits for beta users, no auto-refill
+    credits: { type: Number, default: 30 },
 });
 
 // 2. USER SCHEMA
@@ -165,3 +167,38 @@ export const Blueprint = mongoose.models.Blueprint ||
 
 export const BlueprintSuite = mongoose.models.BlueprintSuite ||
     mongoose.model("BlueprintSuite", BlueprintSuiteSchema);
+
+// ============ FEEDBACK MODEL ============
+
+const FeedbackSchema = new mongoose.Schema({
+    type: {
+        type: String,
+        enum: ["feedback", "feature", "bug"],
+        required: true,
+    },
+    email: { type: String, required: true },
+    subject: { type: String, required: true, maxlength: 200 },
+    description: { type: String, required: true, maxlength: 2000 },
+    priority: {
+        type: String,
+        enum: ["low", "medium", "high", "critical"],
+        default: "medium",
+    },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        index: true,
+    },
+    status: {
+        type: String,
+        enum: ["pending", "reviewed", "resolved"],
+        default: "pending",
+    },
+    browserInfo: { type: String }, // Auto-detected for bug reports
+}, { timestamps: true });
+
+// Index for admin queries
+FeedbackSchema.index({ status: 1, createdAt: -1 });
+
+export const Feedback = mongoose.models.Feedback ||
+    mongoose.model("Feedback", FeedbackSchema);

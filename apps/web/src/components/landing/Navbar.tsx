@@ -27,6 +27,9 @@ export default function Navbar() {
                     <MagneticLink href="/about" className="hover:text-white transition-colors block px-2 py-1">
                         About
                     </MagneticLink>
+                    <MagneticLink href="/feedback" className="hover:text-white transition-colors block px-2 py-1">
+                        Feedback
+                    </MagneticLink>
                 </div>
 
                 <div className="flex items-center gap-6">

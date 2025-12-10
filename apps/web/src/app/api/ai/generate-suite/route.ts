@@ -86,7 +86,7 @@ export async function POST(req: Request) {
 
         // 3. Deduct credits for blueprint suite generation (3 credits)
         const creditResult = await deductCredits(
-            session.user.id,
+            session.user.email!,
             CREDIT_COSTS.BLUEPRINT_SUITE,
             "blueprint_suite_generation"
         );

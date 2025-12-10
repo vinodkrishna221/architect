@@ -8,10 +8,13 @@
  * - Project creation: FREE
  * 
  * Beta users start with 30 credits. Credits do NOT auto-refill.
+ * 
+ * NOTE: Credits are tracked on the Waitlist collection (not User),
+ * since this app uses access-code based auth via Waitlist.
  */
 
 import dbConnect from "@/lib/db";
-import { User } from "@/lib/models";
+import { Waitlist } from "@/lib/models";
 
 // Credit costs
 export const CREDIT_COSTS = {
@@ -32,14 +35,15 @@ interface CreditResult {
 
 /**
  * Check if user has enough credits for an action
+ * @param userEmail - User's email address (from session)
  */
 export async function hasEnoughCredits(
-    userId: string,
+    userEmail: string,
     cost: number
 ): Promise<{ hasCredits: boolean; currentCredits: number }> {
     await dbConnect();
 
-    const user = await User.findById(userId).select("credits").lean();
+    const user = await Waitlist.findOne({ email: userEmail }).select("credits").lean();
     if (!user) {
         return { hasCredits: false, currentCredits: 0 };
     }
@@ -54,38 +58,38 @@ export async function hasEnoughCredits(
 /**
  * Deduct credits from user's account
  * Returns success status and remaining credits
+ * @param userEmail - User's email address (from session)
  */
 export async function deductCredits(
-    userId: string,
+    userEmail: string,
     cost: number,
     action: string
 ): Promise<CreditResult> {
     await dbConnect();
 
     // Use atomic operation to prevent race conditions
-    const result = await User.findOneAndUpdate(
+    const result = await Waitlist.findOneAndUpdate(
         {
-            _id: userId,
+            email: userEmail,
             credits: { $gte: cost } // Only update if enough credits
         },
         {
-            $inc: { credits: -cost },
-            $set: { updatedAt: new Date() }
+            $inc: { credits: -cost }
         },
         {
             new: true,
-            select: "credits"
+            select: "credits email"
         }
     ).lean();
 
     if (!result) {
         // Check if user exists or just doesn't have enough credits
-        const user = await User.findById(userId).select("credits").lean();
+        const user = await Waitlist.findOne({ email: userEmail }).select("credits").lean();
         if (!user) {
             return {
                 success: false,
                 remainingCredits: 0,
-                error: "User not found",
+                error: "User not found in waitlist",
             };
         }
         const currentCredits = (user as { credits?: number }).credits ?? 0;
@@ -96,21 +100,23 @@ export async function deductCredits(
         };
     }
 
-    console.log(`[Credits] User ${userId} spent ${cost} credits on ${action}. Remaining: ${(result as { credits?: number }).credits}`);
+    const remaining = (result as { credits?: number }).credits ?? 0;
+    console.log(`[Credits] ${userEmail} spent ${cost} credits on ${action}. Remaining: ${remaining}`);
 
     return {
         success: true,
-        remainingCredits: (result as { credits?: number }).credits ?? 0,
+        remainingCredits: remaining,
     };
 }
 
 /**
  * Get user's current credit balance
+ * @param userEmail - User's email address (from session)
  */
-export async function getCreditBalance(userId: string): Promise<number> {
+export async function getCreditBalance(userEmail: string): Promise<number> {
     await dbConnect();
 
-    const user = await User.findById(userId).select("credits").lean();
+    const user = await Waitlist.findOne({ email: userEmail }).select("credits").lean();
     if (!user) {
         return 0;
     }
@@ -120,18 +126,18 @@ export async function getCreditBalance(userId: string): Promise<number> {
 
 /**
  * Add credits to user's account (admin function)
+ * @param userEmail - User's email address
  */
 export async function addCredits(
-    userId: string,
+    userEmail: string,
     amount: number
 ): Promise<CreditResult> {
     await dbConnect();
 
-    const result = await User.findByIdAndUpdate(
-        userId,
+    const result = await Waitlist.findOneAndUpdate(
+        { email: userEmail },
         {
-            $inc: { credits: amount },
-            $set: { updatedAt: new Date() }
+            $inc: { credits: amount }
         },
         {
             new: true,
@@ -147,10 +153,11 @@ export async function addCredits(
         };
     }
 
-    console.log(`[Credits] Added ${amount} credits to user ${userId}. New balance: ${(result as { credits?: number }).credits}`);
+    const newBalance = (result as { credits?: number }).credits ?? 0;
+    console.log(`[Credits] Added ${amount} credits to ${userEmail}. New balance: ${newBalance}`);
 
     return {
         success: true,
-        remainingCredits: (result as { credits?: number }).credits ?? 0,
+        remainingCredits: newBalance,
     };
 }

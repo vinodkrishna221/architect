@@ -28,7 +28,7 @@ if (EMAIL_SERVER) {
             port: Number(url.port) || 587,
             secure: url.port === '465', // Use TLS for port 465
             tls: {
-                rejectUnauthorized: true // Security: Validate TLS certificates
+                rejectUnauthorized: false // Allow self-signed certificates
             }
         };
 
@@ -49,7 +49,7 @@ if (EMAIL_SERVER) {
         host: EMAIL_SERVER_HOST,
         port: Number(EMAIL_SERVER_PORT) || 587,
         tls: {
-            rejectUnauthorized: true // Security: Always validate TLS certificates
+            rejectUnauthorized: false // Allow self-signed certificates
         }
     };
 

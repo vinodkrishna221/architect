@@ -14,26 +14,38 @@ if (!MONGODB_URI) {
     process.exit(1);
 }
 
-async function approveUser(email: string): Promise<{ success: boolean; code?: string }> {
-    const user = await Waitlist.findOne({ email });
+async function addAndApproveUser(email: string): Promise<{ success: boolean; code?: string }> {
+    const normalizedEmail = email.toLowerCase().trim();
 
-    if (!user) {
-        console.error(`  ❌ User with email ${email} not found.`);
-        return { success: false };
+    // Check if user already exists
+    let user = await Waitlist.findOne({ email: normalizedEmail });
+
+    if (user) {
+        console.log(`  ℹ️  ${normalizedEmail} already exists, updating...`);
+    } else {
+        // Create new waitlist entry
+        user = new Waitlist({
+            email: normalizedEmail,
+            status: "PENDING",
+            createdAt: new Date()
+        });
+        console.log(`  ➕ ${normalizedEmail} added to waitlist`);
     }
 
-    // Security: Generate cryptographically secure alphanumeric code (8 chars = ~47 bits entropy)
+    // Generate access code
     const accessCode = crypto.randomBytes(4).toString('hex').toUpperCase();
     const hashedCode = await bcrypt.hash(accessCode, 10);
 
+    // Update and approve
     user.status = "APPROVED";
     user.accessCode = hashedCode;
     await user.save();
 
-    console.log(`  ✅ ${email} approved. Code: ${accessCode}`);
+    console.log(`  ✅ ${normalizedEmail} approved. Code: ${accessCode}`);
 
+    // Send welcome email
     await sendEmail({
-        to: email,
+        to: normalizedEmail,
         subject: "Welcome to Architect!",
         text: `You have been approved. Your Access Code is: ${accessCode}`,
         html: `
@@ -53,7 +65,7 @@ async function main() {
 
     if (emails.length === 0) {
         console.error("Please provide at least one email address.");
-        console.log("Usage: npx tsx scripts/approve-users.ts <email1> [email2] [email3] ...");
+        console.log("Usage: npx tsx scripts/add-and-approve.ts <email1> [email2] [email3] ...");
         process.exit(1);
     }
 
@@ -66,7 +78,7 @@ async function main() {
 
         for (const email of emails) {
             try {
-                const result = await approveUser(email.toLowerCase().trim());
+                const result = await addAndApproveUser(email);
                 if (result.success) successCount++;
                 else failCount++;
             } catch (error) {
