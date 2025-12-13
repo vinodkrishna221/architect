@@ -47,7 +47,7 @@ export function GenerateButton({ className }: GenerateButtonProps) {
             const blueprints: Blueprint[] = data.blueprints;
 
             setBlueprints(blueprints);
-            setGenerationProgress(data.suite.completedCount, data.suite.totalCount || 6);
+            setGenerationProgress(data.suite.completedCount, data.suite.totalCount);
 
             // Check if generation is complete
             if (data.suite.status === "complete" || data.suite.status === "partial" || data.suite.status === "error") {
@@ -88,7 +88,7 @@ export function GenerateButton({ className }: GenerateButtonProps) {
             // Check if this is an existing suite (no charge was made)
             if (data.isExisting) {
                 // Just set progress from existing data, no need to poll
-                setGenerationProgress(data.completedCount, data.totalCount || 6);
+                setGenerationProgress(data.completedCount, data.totalCount);
                 if (data.status === "complete" || data.status === "partial") {
                     setGenerating(false);
                     // Fetch blueprints once
@@ -97,7 +97,7 @@ export function GenerateButton({ className }: GenerateButtonProps) {
                 }
             } else {
                 // New generation - set initial progress
-                setGenerationProgress(0, data.totalCount || 6);
+                setGenerationProgress(0, data.totalCount);
             }
 
             // Fetch initial blueprints
@@ -158,7 +158,10 @@ export function GenerateButton({ className }: GenerateButtonProps) {
                         <>
                             <Loader2 className="w-5 h-5 animate-spin" />
                             <span className="text-white">
-                                Generating {generationProgress.completed}/{generationProgress.total}...
+                                {generationProgress.total > 0
+                                    ? `Generating ${generationProgress.completed}/${generationProgress.total}...`
+                                    : "Preparing..."
+                                }
                             </span>
                         </>
                     ) : (
@@ -181,7 +184,7 @@ export function GenerateButton({ className }: GenerateButtonProps) {
                                 className="h-full bg-gradient-to-r from-blue-500 to-indigo-500"
                                 initial={{ width: "0%" }}
                                 animate={{
-                                    width: `${(generationProgress.completed / generationProgress.total) * 100}%`,
+                                    width: `${generationProgress.total > 0 ? (generationProgress.completed / generationProgress.total) * 100 : 0}%`,
                                 }}
                                 transition={{ duration: 0.5 }}
                             />

@@ -76,7 +76,7 @@ const initialState: InterrogationState & BlueprintState = {
     blueprints: [],
     activeBlueprint: null,
     isGenerating: false,
-    generationProgress: { completed: 0, total: 6 },
+    generationProgress: { completed: 0, total: 0 }, // Total comes dynamically from API based on project type
 };
 
 export const useWorkspaceStore = create<WorkspaceState>((set) => ({

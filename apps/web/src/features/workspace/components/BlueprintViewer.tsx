@@ -51,6 +51,10 @@ const BLUEPRINT_ICONS: Record<string, LucideIcon> = {
     "device-communication": Cpu,
     "real-time-architecture": Globe,
     "notification-system": Bell,
+    // Educational types
+    "animation-system": Palette,
+    "interactive-content": Users,
+    "progress-tracking": BarChart3,
 };
 
 // Get icon for blueprint type (with fallback)
@@ -77,6 +81,10 @@ function getTitleForType(type: string): string {
         "device-communication": "IoT",
         "real-time-architecture": "Real-time",
         "notification-system": "Notifications",
+        // Educational types
+        "animation-system": "Animations",
+        "interactive-content": "Interactive",
+        "progress-tracking": "Progress",
     };
     return titles[type] || type.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 }
@@ -172,7 +180,10 @@ export function BlueprintViewer() {
                             <div>
                                 <p className="text-white font-medium">Generating Blueprints</p>
                                 <p className="text-white/50 text-sm mt-1">
-                                    {generationProgress.completed}/{generationProgress.total} complete
+                                    {generationProgress.total > 0
+                                        ? `${generationProgress.completed}/${generationProgress.total} complete`
+                                        : "Preparing..."
+                                    }
                                 </p>
                             </div>
                         </>
@@ -203,7 +214,9 @@ export function BlueprintViewer() {
                     <div className="px-4 py-2 border-b border-white/5 flex items-center gap-2 text-sm text-blue-400">
                         <Loader2 className="w-4 h-4 animate-spin" />
                         <span>
-                            Generating blueprints... {generationProgress.completed}/{generationProgress.total}
+                            Generating blueprints... {generationProgress.total > 0
+                                ? `${generationProgress.completed}/${generationProgress.total}`
+                                : ""}
                         </span>
                     </div>
                 )}
