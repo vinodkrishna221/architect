@@ -16,7 +16,8 @@ export type ProjectType =
     | "api"
     | "ai-product"
     | "cli"
-    | "iot";
+    | "iot"
+    | "educational";
 
 // Feature flags that can be detected
 export type FeatureFlag =
@@ -28,7 +29,10 @@ export type FeatureFlag =
     | "multi-tenant"
     | "third-party-integrations"
     | "offline-support"
-    | "i18n";
+    | "i18n"
+    | "gamification"
+    | "video-content"
+    | "interactive-exercises";
 
 export const INTERROGATION_SYSTEM_PROMPT = `You are "The Analyst" - a Principal Technical PM with 15+ years at companies like Google, Stripe, and Airbnb.
 
@@ -86,8 +90,8 @@ Conduct a thorough requirements interview. You must understand:
 
 ## Hidden Task: Project Classification
 As you interview, silently classify the project:
-- **projectType**: saas | marketplace | mobile | ecommerce | internal | api | ai-product | cli | iot
-- **detectedFeatures**: payments | real-time | file-uploads | notifications | analytics | multi-tenant | third-party-integrations | offline-support | i18n
+- **projectType**: saas | marketplace | mobile | ecommerce | internal | api | ai-product | cli | iot | educational
+- **detectedFeatures**: payments | real-time | file-uploads | notifications | analytics | multi-tenant | third-party-integrations | offline-support | i18n | gamification | video-content | interactive-exercises
 
 ## Response Format (Strict JSON)
 {

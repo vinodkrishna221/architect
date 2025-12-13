@@ -18,6 +18,7 @@ const PROJECT_TYPES = [
     { value: "ai-product", label: "AI Product", description: "AI/ML powered app" },
     { value: "cli", label: "CLI Tool", description: "Command-line tool" },
     { value: "iot", label: "IoT", description: "Hardware/connected devices" },
+    { value: "educational", label: "Educational", description: "Interactive learning platform" },
 ] as const;
 
 interface CreateProjectModalProps {

@@ -52,6 +52,13 @@ const PROJECT_TYPE_BLUEPRINTS: Record<ProjectType, string[]> = {
         "device-communication",
         "frontend",
     ],
+    "educational": [
+        "design-system",
+        "frontend",
+        "animation-system",
+        "interactive-content",
+        "progress-tracking",
+    ],
 };
 
 // Feature-based additional PRDs
@@ -110,6 +117,9 @@ export function getBlueprintTitle(type: string): string {
         "device-communication": "Device Communication PRD",
         "real-time-architecture": "Real-time Architecture PRD",
         "notification-system": "Notification System PRD",
+        "animation-system": "Animation & Visualization System PRD",
+        "interactive-content": "Interactive Content Architecture PRD",
+        "progress-tracking": "Learning Progress & Gamification PRD",
     };
     return titles[type] || `${type} PRD`;
 }
