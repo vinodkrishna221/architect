@@ -6,7 +6,7 @@ import { Project } from "@/lib/models";
 import mongoose from "mongoose";
 
 // Valid project types for dynamic PRD generation
-const PROJECT_TYPES = ["saas", "marketplace", "mobile", "ecommerce", "internal", "api", "ai-product", "cli", "iot"] as const;
+const PROJECT_TYPES = ["saas", "marketplace", "mobile", "ecommerce", "internal", "api", "ai-product", "cli", "iot", "educational"] as const;
 
 // Security: Zod schema for project input validation
 const createProjectSchema = z.object({
