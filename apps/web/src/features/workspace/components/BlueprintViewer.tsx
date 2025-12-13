@@ -335,7 +335,10 @@ export function BlueprintViewer() {
                             {currentBlueprint.status === "pending" && (
                                 <div className="flex flex-col items-center justify-center py-20 text-center">
                                     <Clock className="w-8 h-8 text-white/30 mb-4" />
-                                    <p className="text-white/50">Waiting to generate...</p>
+                                    <p className="text-white/50">Queued for generation</p>
+                                    <p className="text-white/40 text-sm mt-2">
+                                        Click &quot;Resume Generation&quot; to continue
+                                    </p>
                                 </div>
                             )}
                         </motion.div>

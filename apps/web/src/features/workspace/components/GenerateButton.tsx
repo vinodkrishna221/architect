@@ -4,14 +4,28 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWorkspaceStore, Blueprint } from "../store";
 import { cn } from "@/lib/utils";
-import { Sparkles, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { Sparkles, Loader2, CheckCircle, AlertCircle, Play, RotateCcw, Info } from "lucide-react";
 
 interface GenerateButtonProps {
     className?: string;
 }
 
+// Suite status response from check-suite API
+interface SuiteStatus {
+    hasExisting: boolean;
+    status: "generating" | "complete" | "partial" | "error" | null;
+    pendingCount: number;
+    failedCount: number;
+    completedCount: number;
+    generatingCount: number;
+    totalCount: number;
+    suiteId: string | null;
+}
+
 export function GenerateButton({ className }: GenerateButtonProps) {
     const [error, setError] = useState<string | null>(null);
+    const [suiteStatus, setSuiteStatus] = useState<SuiteStatus | null>(null);
+    const [isCheckingStatus, setIsCheckingStatus] = useState(false);
     const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
     const {
@@ -25,6 +39,44 @@ export function GenerateButton({ className }: GenerateButtonProps) {
         setGenerating,
         setGenerationProgress,
     } = useWorkspaceStore();
+
+    // Check for existing suite status on mount
+    useEffect(() => {
+        if (conversationId && isComplete && !isGenerating) {
+            checkSuiteStatus();
+        }
+    }, [conversationId, isComplete, isGenerating]);
+
+    // Check suite status from backend
+    const checkSuiteStatus = async () => {
+        if (!conversationId) return;
+
+        setIsCheckingStatus(true);
+        try {
+            const res = await fetch(`/api/ai/check-suite?conversationId=${conversationId}`);
+            if (res.ok) {
+                const data: SuiteStatus = await res.json();
+                setSuiteStatus(data);
+
+                // If there's an existing suite, also fetch blueprints
+                if (data.hasExisting && data.suiteId) {
+                    setSuiteId(data.suiteId);
+                    setGenerationProgress(data.completedCount, data.totalCount);
+
+                    // Fetch actual blueprints for display
+                    const bpRes = await fetch(`/api/ai/blueprints/${data.suiteId}`);
+                    if (bpRes.ok) {
+                        const bpData = await bpRes.json();
+                        setBlueprints(bpData.blueprints);
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("Error checking suite status:", err);
+        } finally {
+            setIsCheckingStatus(false);
+        }
+    };
 
     // Cleanup polling on unmount
     useEffect(() => {
@@ -120,8 +172,30 @@ export function GenerateButton({ className }: GenerateButtonProps) {
         return null;
     }
 
-    // Already have blueprints generated
-    if (suiteId && !isGenerating && generationProgress.completed > 0) {
+    // Loading state while checking suite status
+    if (isCheckingStatus) {
+        return (
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className={cn("flex items-center justify-center gap-2 px-4 py-3 bg-white/5 rounded-xl", className)}
+            >
+                <Loader2 className="w-4 h-4 text-white/50 animate-spin" />
+                <span className="text-white/50 text-sm">Checking status...</span>
+            </motion.div>
+        );
+    }
+
+    // Determine button state based on suite status
+    const hasExisting = suiteStatus?.hasExisting;
+    const pendingCount = suiteStatus?.pendingCount || 0;
+    const failedCount = suiteStatus?.failedCount || 0;
+    const completedCount = suiteStatus?.completedCount || generationProgress.completed;
+    const isResumeMode = hasExisting && (pendingCount > 0 || failedCount > 0);
+    const isAllComplete = hasExisting && pendingCount === 0 && failedCount === 0 && completedCount > 0;
+
+    // Already have all blueprints generated successfully
+    if (isAllComplete && !isGenerating) {
         return (
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -130,11 +204,78 @@ export function GenerateButton({ className }: GenerateButtonProps) {
             >
                 <CheckCircle className="w-5 h-5 text-green-400" />
                 <span className="text-green-400 font-medium">
-                    {generationProgress.completed} Blueprints Generated
+                    {completedCount} Blueprints Generated
                 </span>
             </motion.div>
         );
     }
+
+    // Get button content based on mode
+    const getButtonContent = () => {
+        if (isGenerating) {
+            return (
+                <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span className="text-white">
+                        {generationProgress.total > 0
+                            ? `Generating ${generationProgress.completed}/${generationProgress.total}...`
+                            : "Preparing..."
+                        }
+                    </span>
+                </>
+            );
+        }
+
+        if (isResumeMode) {
+            const pendingText = pendingCount > 0 ? `${pendingCount} pending` : "";
+            const failedText = failedCount > 0 ? `${failedCount} failed` : "";
+            const resumeText = [pendingText, failedText].filter(Boolean).join(", ");
+
+            return (
+                <>
+                    <Play className="w-5 h-5 text-white" />
+                    <span className="text-white">Resume Generation ({resumeText})</span>
+                </>
+            );
+        }
+
+        return (
+            <>
+                <Sparkles className="w-5 h-5 text-white" />
+                <span className="text-white">Generate Blueprints</span>
+            </>
+        );
+    };
+
+    // Get info text based on mode
+    const getInfoText = () => {
+        if (isGenerating) return null;
+
+        if (isResumeMode) {
+            return (
+                <div className="flex items-center gap-2 text-xs text-white/40">
+                    <Info className="w-3 h-3" />
+                    <span>Continue from where you left off (no additional cost)</span>
+                </div>
+            );
+        }
+
+        return (
+            <div className="flex items-center gap-2 text-xs text-white/40">
+                <Info className="w-3 h-3" />
+                <span>Uses 3 credits to generate your PRD documents</span>
+            </div>
+        );
+    };
+
+    // Get button gradient based on mode
+    const getButtonGradient = () => {
+        if (isGenerating) return "bg-blue-600/50 cursor-not-allowed";
+        if (isResumeMode) {
+            return "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40";
+        }
+        return "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40";
+    };
 
     return (
         <AnimatePresence mode="wait">
@@ -149,28 +290,22 @@ export function GenerateButton({ className }: GenerateButtonProps) {
                     disabled={isGenerating}
                     className={cn(
                         "w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all duration-300",
-                        isGenerating
-                            ? "bg-blue-600/50 cursor-not-allowed"
-                            : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40"
+                        getButtonGradient()
                     )}
                 >
-                    {isGenerating ? (
-                        <>
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                            <span className="text-white">
-                                {generationProgress.total > 0
-                                    ? `Generating ${generationProgress.completed}/${generationProgress.total}...`
-                                    : "Preparing..."
-                                }
-                            </span>
-                        </>
-                    ) : (
-                        <>
-                            <Sparkles className="w-5 h-5 text-white" />
-                            <span className="text-white">Generate Blueprints</span>
-                        </>
-                    )}
+                    {getButtonContent()}
                 </button>
+
+                {/* Info Text */}
+                {getInfoText() && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="flex justify-center"
+                    >
+                        {getInfoText()}
+                    </motion.div>
+                )}
 
                 {/* Progress Bar */}
                 {isGenerating && (
@@ -221,3 +356,4 @@ export function GenerateButton({ className }: GenerateButtonProps) {
         </AnimatePresence>
     );
 }
+

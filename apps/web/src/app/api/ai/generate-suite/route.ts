@@ -85,22 +85,91 @@ export async function POST(req: Request) {
             );
         }
 
-        // 3. Check for existing suite (duplicate prevention)
+        // 3. Check for existing suite
         const existingSuite = await BlueprintSuite.findOne({
             projectId: conversation.projectId,
-            status: { $in: ["generating", "complete", "partial"] }
         });
 
         if (existingSuite) {
-            // Return existing suite instead of charging again
-            const existingBlueprints = await Blueprint.find({ suiteId: existingSuite._id });
+            // Check if there are pending/failed blueprints to resume
+            const pendingBlueprints = await Blueprint.find({
+                suiteId: existingSuite._id,
+                status: { $in: ["pending", "error"] }
+            });
+
+            if (pendingBlueprints.length > 0) {
+                // RESUME MODE: Continue generation without charging
+                console.log(`[Resume] Resuming generation for suite ${existingSuite._id} with ${pendingBlueprints.length} pending/failed blueprints`);
+
+                // Update suite status to generating
+                existingSuite.status = "generating";
+                await existingSuite.save();
+
+                // Generate pending blueprints
+                const conversationSummary = buildConversationSummary(
+                    conversation.initialDescription,
+                    conversation.messages
+                );
+
+                let completedCount = existingSuite.completedCount || 0;
+                let hasErrors = false;
+
+                for (const blueprint of pendingBlueprints) {
+                    try {
+                        blueprint.status = "generating";
+                        await blueprint.save();
+
+                        const config = BLUEPRINT_CONFIGS[blueprint.type as BlueprintType];
+                        const prompt = config
+                            ? buildBlueprintPrompt(blueprint.type as BlueprintType, conversationSummary)
+                            : `Generate a ${getBlueprintTitle(blueprint.type)} based on these requirements:\n\n${conversationSummary}`;
+
+                        const markdownContent = await callGLM(BLUEPRINT_SYSTEM_PROMPT, prompt);
+
+                        blueprint.content = markdownContent;
+                        blueprint.status = "complete";
+                        await blueprint.save();
+
+                        completedCount++;
+                        existingSuite.completedCount = completedCount;
+                        await existingSuite.save();
+                    } catch (blueprintError) {
+                        console.error(`[Resume] Error generating ${blueprint.type}:`, blueprintError);
+                        blueprint.status = "error";
+                        await blueprint.save();
+                        hasErrors = true;
+                    }
+                }
+
+                // Set final status
+                if (completedCount === existingSuite.totalCount) {
+                    existingSuite.status = "complete";
+                } else if (completedCount > 0) {
+                    existingSuite.status = "partial";
+                } else {
+                    existingSuite.status = "error";
+                }
+                await existingSuite.save();
+
+                return NextResponse.json({
+                    suiteId: existingSuite._id,
+                    status: existingSuite.status,
+                    completedCount: existingSuite.completedCount,
+                    totalCount: existingSuite.totalCount,
+                    selectedTypes: existingSuite.selectedTypes || [],
+                    isResume: true,
+                });
+            }
+
+            // No pending blueprints - suite is complete or has only errors
+            // Return existing suite without charging
             return NextResponse.json({
                 suiteId: existingSuite._id,
                 status: existingSuite.status,
                 completedCount: existingSuite.completedCount,
                 totalCount: existingSuite.totalCount || 6,
                 selectedTypes: existingSuite.selectedTypes || [],
-                isExisting: true, // Flag to indicate this is a retry/existing
+                isExisting: true,
             });
         }
 
