@@ -38,7 +38,7 @@ interface WorkspaceState extends InterrogationState, BlueprintState {
     // Streaming actions
     startStreamingMessage: (category?: MessageCategory) => string;
     updateStreamingMessage: (content: string) => void;
-    finalizeStreamingMessage: (category?: MessageCategory) => void;
+    finalizeStreamingMessage: (category?: MessageCategory, content?: string) => void;
 
     // Blueprint actions
     setSuiteId: (id: string) => void;
@@ -135,7 +135,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
             };
         }),
 
-    finalizeStreamingMessage: (category) =>
+    finalizeStreamingMessage: (category, content) =>
         set((state) => {
             if (!state.streamingMessageId) return state;
             return {
@@ -143,7 +143,12 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
                 isStreaming: false,
                 messages: state.messages.map((msg) =>
                     msg.id === state.streamingMessageId
-                        ? { ...msg, category: category || msg.category }
+                        ? {
+                            ...msg,
+                            category: category || msg.category,
+                            // Replace raw JSON with parsed question if content is provided
+                            ...(content !== undefined && { content })
+                        }
                         : msg
                 ),
             };

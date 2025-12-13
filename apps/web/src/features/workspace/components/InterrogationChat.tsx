@@ -182,6 +182,7 @@ export function InterrogationChat({ projectId }: InterrogationChatProps) {
             let buffer = "";
             let receivedConversationId = "";
             let finalCategory: "users" | "problem" | "technical" | "scope" | undefined;
+            let finalQuestion: string | undefined;
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -203,6 +204,7 @@ export function InterrogationChat({ projectId }: InterrogationChatProps) {
                         case "done": {
                             const doneData = data as SSEDoneData;
                             finalCategory = doneData.category;
+                            finalQuestion = doneData.question; // Store parsed question to replace raw JSON
                             setQuestionsAsked(doneData.questionsAsked);
                             if (doneData.isComplete) {
                                 setComplete(true);
@@ -215,7 +217,7 @@ export function InterrogationChat({ projectId }: InterrogationChatProps) {
                 }
             }
 
-            finalizeStreamingMessage(finalCategory);
+            finalizeStreamingMessage(finalCategory, finalQuestion);
         } catch (error) {
             console.error("Failed to start conversation:", error);
             finalizeStreamingMessage();
@@ -252,6 +254,7 @@ export function InterrogationChat({ projectId }: InterrogationChatProps) {
             const decoder = new TextDecoder();
             let buffer = "";
             let finalCategory: "users" | "problem" | "technical" | "scope" | undefined;
+            let finalQuestion: string | undefined;
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -269,6 +272,7 @@ export function InterrogationChat({ projectId }: InterrogationChatProps) {
                         case "done": {
                             const doneData = data as SSEDoneData;
                             finalCategory = doneData.category;
+                            finalQuestion = doneData.question; // Store parsed question to replace raw JSON
                             setQuestionsAsked(doneData.questionsAsked);
                             if (doneData.isComplete) {
                                 setComplete(true);
@@ -281,7 +285,7 @@ export function InterrogationChat({ projectId }: InterrogationChatProps) {
                 }
             }
 
-            finalizeStreamingMessage(finalCategory);
+            finalizeStreamingMessage(finalCategory, finalQuestion);
         } catch (error) {
             console.error("Failed to send answer:", error);
             finalizeStreamingMessage();
