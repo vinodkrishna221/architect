@@ -60,7 +60,7 @@ const ProjectSchema = new Schema({
     // User-selected project type for dynamic PRD generation
     projectType: {
         type: String,
-        enum: ["saas", "marketplace", "mobile", "ecommerce", "internal", "api", "ai-product", "cli", "iot"],
+        enum: ["saas", "marketplace", "mobile", "ecommerce", "internal", "api", "ai-product", "cli", "iot", "educational"],
         default: "saas"
     },
     status: {
@@ -119,12 +119,12 @@ const ConversationSchema = new mongoose.Schema({
     // Project classification (detected by AI during interrogation)
     projectType: {
         type: String,
-        enum: ["saas", "marketplace", "mobile", "ecommerce", "internal", "api", "ai-product", "cli", "iot", null],
+        enum: ["saas", "marketplace", "mobile", "ecommerce", "internal", "api", "ai-product", "cli", "iot", "educational", null],
         default: null
     },
     detectedFeatures: [{
         type: String,
-        enum: ["payments", "real-time", "file-uploads", "notifications", "analytics", "multi-tenant", "third-party-integrations", "offline-support", "i18n"]
+        enum: ["payments", "real-time", "file-uploads", "notifications", "analytics", "multi-tenant", "third-party-integrations", "offline-support", "i18n", "gamification", "video-content", "interactive-exercises"]
     }],
     // AI confidence per category (0.0 - 1.0)
     confidenceScores: {
