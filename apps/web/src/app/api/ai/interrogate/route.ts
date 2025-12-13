@@ -5,9 +5,11 @@ import { Conversation } from "@/lib/models";
 import { callGLM } from "@/lib/ai/client";
 import {
     INTERROGATION_SYSTEM_PROMPT,
-    buildInterrogationUserPrompt
+    buildInterrogationUserPrompt,
+    ProjectType,
+    FeatureFlag
 } from "@/lib/ai/prompts/interrogation";
-import { deductCredits, CREDIT_COSTS, getCreditBalance } from "@/lib/credits";
+import { deductCredits, CREDIT_COSTS } from "@/lib/credits";
 
 interface InterrogationRequest {
     conversationId?: string;
@@ -18,9 +20,17 @@ interface InterrogationRequest {
 
 interface AIResponse {
     question: string;
-    category: "users" | "problem" | "technical" | "scope";
+    category: "users" | "problem" | "technical" | "scope" | "competition" | "monetization";
     isComplete: boolean;
     completionReason?: string | null;
+    projectType?: ProjectType;
+    detectedFeatures?: FeatureFlag[];
+    confidence?: {
+        users: number;
+        problem: number;
+        technical: number;
+        scope: number;
+    };
 }
 
 export async function POST(req: Request) {
@@ -135,7 +145,18 @@ export async function POST(req: Request) {
         });
         conversation.questionsAsked += 1;
 
-        // 6. Check for completion
+        // 6. Update project classification if AI provided it
+        if (parsed.projectType) {
+            conversation.projectType = parsed.projectType;
+        }
+        if (parsed.detectedFeatures && parsed.detectedFeatures.length > 0) {
+            conversation.detectedFeatures = parsed.detectedFeatures;
+        }
+        if (parsed.confidence) {
+            conversation.confidenceScores = parsed.confidence;
+        }
+
+        // 7. Check for completion
         if (parsed.isComplete) {
             conversation.status = "complete";
             conversation.isReadyForBlueprints = true;
@@ -143,7 +164,7 @@ export async function POST(req: Request) {
 
         await conversation.save();
 
-        // 7. Return response
+        // 8. Return response with new fields
         return NextResponse.json({
             conversationId: conversation._id,
             question: parsed.question,
@@ -151,6 +172,10 @@ export async function POST(req: Request) {
             isComplete: parsed.isComplete || false,
             completionReason: parsed.completionReason || null,
             questionsAsked: conversation.questionsAsked,
+            // New fields for project classification
+            projectType: conversation.projectType || null,
+            detectedFeatures: conversation.detectedFeatures || [],
+            confidence: parsed.confidence || null,
         });
     } catch (error) {
         console.error("[API] Interrogation error:", error);

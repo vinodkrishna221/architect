@@ -13,6 +13,9 @@ interface InterrogationState {
     isComplete: boolean;
     isLoading: boolean;
     questionsAsked: number;
+    // Streaming state
+    streamingMessageId: string | null;
+    isStreaming: boolean;
 }
 
 // Blueprint state
@@ -32,6 +35,10 @@ interface WorkspaceState extends InterrogationState, BlueprintState {
     setComplete: (complete: boolean) => void;
     setLoading: (loading: boolean) => void;
     setQuestionsAsked: (count: number) => void;
+    // Streaming actions
+    startStreamingMessage: (category?: MessageCategory) => string;
+    updateStreamingMessage: (content: string) => void;
+    finalizeStreamingMessage: (category?: MessageCategory) => void;
 
     // Blueprint actions
     setSuiteId: (id: string) => void;
@@ -56,12 +63,13 @@ interface WorkspaceState extends InterrogationState, BlueprintState {
 }
 
 const initialState: InterrogationState & BlueprintState = {
-    // Interrogation
     conversationId: null,
     messages: [],
     isComplete: false,
     isLoading: false,
     questionsAsked: 0,
+    streamingMessageId: null,
+    isStreaming: false,
 
     // Blueprints
     suiteId: null,
@@ -94,6 +102,52 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
     setLoading: (loading) => set({ isLoading: loading }),
 
     setQuestionsAsked: (count) => set({ questionsAsked: count }),
+
+    // Streaming actions
+    startStreamingMessage: (category) => {
+        const id = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+        set((state) => ({
+            streamingMessageId: id,
+            isStreaming: true,
+            messages: [
+                ...state.messages,
+                {
+                    id,
+                    role: "assistant" as const,
+                    content: "",
+                    category,
+                    timestamp: new Date(),
+                },
+            ],
+        }));
+        return id;
+    },
+
+    updateStreamingMessage: (content) =>
+        set((state) => {
+            if (!state.streamingMessageId) return state;
+            return {
+                messages: state.messages.map((msg) =>
+                    msg.id === state.streamingMessageId
+                        ? { ...msg, content: msg.content + content }
+                        : msg
+                ),
+            };
+        }),
+
+    finalizeStreamingMessage: (category) =>
+        set((state) => {
+            if (!state.streamingMessageId) return state;
+            return {
+                streamingMessageId: null,
+                isStreaming: false,
+                messages: state.messages.map((msg) =>
+                    msg.id === state.streamingMessageId
+                        ? { ...msg, category: category || msg.category }
+                        : msg
+                ),
+            };
+        }),
 
     // Blueprint actions
     setSuiteId: (id) => set({ suiteId: id }),

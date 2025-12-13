@@ -14,9 +14,8 @@ import { useRouter } from "next/navigation";
 interface UserStats {
     projectCount: number;
     blueprintCount: number;
-    todayUsage: number;
-    dailyLimit: number;
-    remainingToday: number;
+    credits: number;
+    maxCredits: number;
 }
 
 interface RecentProject {
@@ -142,10 +141,10 @@ export default function ProfilePage() {
                                         <div className="flex items-center justify-center gap-1 mb-1">
                                             <Calendar className="w-4 h-4 text-amber-400" />
                                         </div>
-                                        <p className="text-2xl font-bold text-white">
-                                            {isLoading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : `${stats?.remainingToday ?? 3}/${stats?.dailyLimit ?? 3}`}
+                                        <p className={`text-2xl font-bold ${(stats?.credits ?? 30) > 5 ? 'text-white' : (stats?.credits ?? 30) > 0 ? 'text-amber-400' : 'text-red-400'}`}>
+                                            {isLoading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : `${(stats?.credits ?? 30).toFixed(1)}`}
                                         </p>
-                                        <p className="text-white/50 text-xs">Today</p>
+                                        <p className="text-white/50 text-xs">Credits</p>
                                     </div>
                                 </div>
                             </div>

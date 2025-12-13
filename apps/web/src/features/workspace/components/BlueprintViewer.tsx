@@ -21,17 +21,65 @@ import {
     ListChecks,
     Copy,
     Check,
+    CreditCard,
+    Smartphone,
+    Bell,
+    BarChart3,
+    Users,
+    Globe,
+    Terminal,
+    Cpu,
+    LucideIcon,
 } from "lucide-react";
 
-// Blueprint type order and configuration
-const BLUEPRINT_CONFIG = [
-    { type: "design-system", title: "Design System", icon: Palette },
-    { type: "frontend", title: "Frontend", icon: Layout },
-    { type: "backend", title: "Backend", icon: Server },
-    { type: "database", title: "Database", icon: Database },
-    { type: "security", title: "Security", icon: Shield },
-    { type: "mvp-features", title: "MVP Features", icon: ListChecks },
-] as const;
+// Blueprint type icons mapping (supports dynamic types)
+const BLUEPRINT_ICONS: Record<string, LucideIcon> = {
+    "design-system": Palette,
+    "frontend": Layout,
+    "backend": Server,
+    "database": Database,
+    "security": Shield,
+    "mvp-features": ListChecks,
+    // Dynamic types
+    "payment-integration": CreditCard,
+    "mobile-architecture": Smartphone,
+    "push-notifications": Bell,
+    "trust-safety": Shield,
+    "api-documentation": FileText,
+    "prompt-engineering": Terminal,
+    "cli-architecture": Terminal,
+    "device-communication": Cpu,
+    "real-time-architecture": Globe,
+    "notification-system": Bell,
+};
+
+// Get icon for blueprint type (with fallback)
+function getIconForType(type: string): LucideIcon {
+    return BLUEPRINT_ICONS[type] || FileText;
+}
+
+// Get display title for blueprint type
+function getTitleForType(type: string): string {
+    const titles: Record<string, string> = {
+        "design-system": "Design System",
+        "frontend": "Frontend",
+        "backend": "Backend",
+        "database": "Database",
+        "security": "Security",
+        "mvp-features": "MVP Features",
+        "payment-integration": "Payments",
+        "mobile-architecture": "Mobile",
+        "push-notifications": "Push Notifications",
+        "trust-safety": "Trust & Safety",
+        "api-documentation": "API Docs",
+        "prompt-engineering": "Prompts",
+        "cli-architecture": "CLI",
+        "device-communication": "IoT",
+        "real-time-architecture": "Real-time",
+        "notification-system": "Notifications",
+    };
+    return titles[type] || type.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
 
 // Status icon component
 function StatusIcon({ status }: { status: string }) {
@@ -87,12 +135,18 @@ export function BlueprintViewer() {
         }
     }, [blueprints, activeBlueprint, setActiveBlueprint]);
 
-    // Sort blueprints by defined order
+    // Sort blueprints by predefined order, then alphabetically
     const sortedBlueprints = useMemo(() => {
-        const typeOrder: string[] = BLUEPRINT_CONFIG.map((c) => c.type);
-        return [...blueprints].sort(
-            (a, b) => typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type)
-        );
+        const coreOrder = ["mvp-features", "design-system", "frontend", "backend", "database", "security"];
+        return [...blueprints].sort((a, b) => {
+            const aIndex = coreOrder.indexOf(a.type);
+            const bIndex = coreOrder.indexOf(b.type);
+            // Core types first, then alphabetical
+            if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+            if (aIndex !== -1) return -1;
+            if (bIndex !== -1) return 1;
+            return a.type.localeCompare(b.type);
+        });
     }, [blueprints]);
 
     // Get current blueprint
@@ -154,30 +208,26 @@ export function BlueprintViewer() {
                     </div>
                 )}
 
-                {/* Tab Bar */}
+                {/* Tab Bar - Dynamic based on actual blueprints */}
                 <div className="flex overflow-x-auto scrollbar-hide">
-                    {BLUEPRINT_CONFIG.map((config) => {
-                        const bp = sortedBlueprints.find((b) => b.type === config.type);
-                        const isActive = activeBlueprint === config.type;
-                        const Icon = config.icon;
+                    {sortedBlueprints.map((bp) => {
+                        const isActive = activeBlueprint === bp.type;
+                        const Icon = getIconForType(bp.type);
 
                         return (
                             <button
-                                key={config.type}
-                                onClick={() => bp && setActiveBlueprint(config.type)}
-                                disabled={!bp}
+                                key={bp.id}
+                                onClick={() => setActiveBlueprint(bp.type)}
                                 className={cn(
                                     "flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-all duration-200 border-b-2",
                                     isActive
                                         ? "border-blue-500 text-white bg-white/5"
-                                        : bp
-                                            ? "border-transparent text-white/50 hover:text-white/70 hover:bg-white/5"
-                                            : "border-transparent text-white/20 cursor-not-allowed"
+                                        : "border-transparent text-white/50 hover:text-white/70 hover:bg-white/5"
                                 )}
                             >
                                 <Icon className="w-4 h-4" />
-                                <span>{config.title}</span>
-                                {bp && <StatusIcon status={bp.status} />}
+                                <span>{getTitleForType(bp.type)}</span>
+                                <StatusIcon status={bp.status} />
                             </button>
                         );
                     })}

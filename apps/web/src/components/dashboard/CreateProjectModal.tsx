@@ -2,10 +2,23 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Loader2, Sparkles } from "lucide-react";
+import { X, Loader2, Sparkles, ChevronDown } from "lucide-react";
 import { useDashboardStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+
+// Project types for dynamic PRD generation
+const PROJECT_TYPES = [
+    { value: "saas", label: "SaaS", description: "Web app with subscriptions" },
+    { value: "marketplace", label: "Marketplace", description: "Two-sided platform" },
+    { value: "mobile", label: "Mobile App", description: "iOS/Android application" },
+    { value: "ecommerce", label: "E-commerce", description: "Online store" },
+    { value: "internal", label: "Internal Tool", description: "Business operations" },
+    { value: "api", label: "API/Developer Tool", description: "Developer platform" },
+    { value: "ai-product", label: "AI Product", description: "AI/ML powered app" },
+    { value: "cli", label: "CLI Tool", description: "Command-line tool" },
+    { value: "iot", label: "IoT", description: "Hardware/connected devices" },
+] as const;
 
 interface CreateProjectModalProps {
     isOpen: boolean;
@@ -15,9 +28,10 @@ interface CreateProjectModalProps {
 export function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps) {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
+    const [projectType, setProjectType] = useState("saas");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState("");
-    const { createProject, remainingToday } = useDashboardStore();
+    const { createProject, credits } = useDashboardStore();
     const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -30,7 +44,7 @@ export function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps)
         setIsSubmitting(true);
         setError("");
 
-        const project = await createProject(title.trim(), description.trim());
+        const project = await createProject(title.trim(), description.trim(), projectType);
 
         if (project) {
             toast.success("Project created!", {
@@ -39,11 +53,12 @@ export function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps)
             onClose();
             setTitle("");
             setDescription("");
+            setProjectType("saas");
             // Navigate to the new project workspace
             router.push(`/project/${project.id}`);
         } else {
-            const errorMsg = remainingToday <= 0
-                ? "Daily limit reached. Come back tomorrow!"
+            const errorMsg = credits <= 0
+                ? "Insufficient credits. Check pricing for more."
                 : "Failed to create project. Please try again.";
             toast.error("Creation failed", {
                 description: errorMsg,
@@ -85,7 +100,7 @@ export function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps)
                                     <div>
                                         <h2 className="text-lg font-bold text-white">New Project</h2>
                                         <p className="text-xs text-zinc-500 font-mono">
-                                            {remainingToday}/{3} REMAINING_TODAY
+                                            {credits.toFixed(1)} CREDITS_AVAILABLE
                                         </p>
                                     </div>
                                 </div>
@@ -123,9 +138,34 @@ export function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps)
                                         value={description}
                                         onChange={(e) => setDescription(e.target.value)}
                                         placeholder="Brief description of your project idea..."
-                                        rows={3}
+                                        rows={2}
                                         className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all resize-none"
                                     />
+                                </div>
+
+                                {/* Project Type Selector */}
+                                <div>
+                                    <label htmlFor="projectType" className="block text-xs font-mono text-zinc-400 mb-2 tracking-wider">
+                                        PROJECT_TYPE *
+                                    </label>
+                                    <div className="relative">
+                                        <select
+                                            id="projectType"
+                                            value={projectType}
+                                            onChange={(e) => setProjectType(e.target.value)}
+                                            className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                                        >
+                                            {PROJECT_TYPES.map((type) => (
+                                                <option key={type.value} value={type.value} className="bg-zinc-900">
+                                                    {type.label} - {type.description}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
+                                    </div>
+                                    <p className="text-xs text-zinc-500 mt-1.5">
+                                        This determines which PRD documents will be generated
+                                    </p>
                                 </div>
 
                                 {error && (
@@ -148,7 +188,7 @@ export function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps)
                                     </button>
                                     <button
                                         type="submit"
-                                        disabled={isSubmitting || remainingToday <= 0}
+                                        disabled={isSubmitting || credits <= 0}
                                         className="flex-1 px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {isSubmitting ? (
@@ -162,9 +202,9 @@ export function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps)
                                     </button>
                                 </div>
 
-                                {remainingToday <= 0 && (
+                                {credits <= 0 && (
                                     <p className="text-center text-xs text-amber-400">
-                                        Daily limit reached. Come back tomorrow!
+                                        Insufficient credits. Check pricing for more!
                                     </p>
                                 )}
                             </form>

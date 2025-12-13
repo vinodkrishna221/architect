@@ -57,6 +57,12 @@ const ProjectSchema = new Schema({
     },
     title: { type: String, required: true },
     description: { type: String, default: "" },
+    // User-selected project type for dynamic PRD generation
+    projectType: {
+        type: String,
+        enum: ["saas", "marketplace", "mobile", "ecommerce", "internal", "api", "ai-product", "cli", "iot"],
+        default: "saas"
+    },
     status: {
         type: String,
         enum: ["DRAFT", "GENERATING", "COMPLETED", "AWAITING_ANSWERS"] as ProjectStatus[],
@@ -110,6 +116,23 @@ const ConversationSchema = new mongoose.Schema({
     },
     questionsAsked: { type: Number, default: 0 },
     isReadyForBlueprints: { type: Boolean, default: false },
+    // Project classification (detected by AI during interrogation)
+    projectType: {
+        type: String,
+        enum: ["saas", "marketplace", "mobile", "ecommerce", "internal", "api", "ai-product", "cli", "iot", null],
+        default: null
+    },
+    detectedFeatures: [{
+        type: String,
+        enum: ["payments", "real-time", "file-uploads", "notifications", "analytics", "multi-tenant", "third-party-integrations", "offline-support", "i18n"]
+    }],
+    // AI confidence per category (0.0 - 1.0)
+    confidenceScores: {
+        users: { type: Number, default: 0 },
+        problem: { type: Number, default: 0 },
+        technical: { type: Number, default: 0 },
+        scope: { type: Number, default: 0 }
+    }
 }, { timestamps: true });
 
 // Compound index for common queries
@@ -125,8 +148,8 @@ const BlueprintSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ["design-system", "frontend", "backend", "database", "security", "mvp-features"],
         required: true
+        // Dynamic: No longer enum-restricted, allows new PRD types
     },
     title: { type: String, required: true },
     content: { type: String, default: "" }, // Markdown content
@@ -137,7 +160,7 @@ const BlueprintSchema = new mongoose.Schema({
     },
 }, { timestamps: true });
 
-// Blueprint Suite (collection of 6 blueprints)
+// Blueprint Suite (collection of blueprints - variable count based on project type)
 const BlueprintSuiteSchema = new mongoose.Schema({
     projectId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -157,6 +180,8 @@ const BlueprintSuiteSchema = new mongoose.Schema({
         default: "generating",
     },
     completedCount: { type: Number, default: 0 },
+    totalCount: { type: Number, default: 6 }, // Dynamic based on project type
+    selectedTypes: [{ type: String }], // Which blueprint types were generated
 }, { timestamps: true });
 
 export const Conversation = mongoose.models.Conversation ||

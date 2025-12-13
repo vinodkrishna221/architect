@@ -4,39 +4,49 @@ import { sendEmail } from './email-helper';
 import * as dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 
-const version = 'v1.3.0';
-const title = 'Feedback System & User Engagement';
+const version = 'v1.4.0';
+const title = 'AI Streaming & PRD Generation Improvements';
 const content = `### ✨ New Features
 
-**Feedback Page**
-- New /feedback page for user submissions
-- Submit general feedback, feature requests, or bug reports
-- Priority levels for bug reporting
-- Rate-limited to prevent spam (5 per day)
+**Real-time AI Streaming**
+- AI responses now stream character-by-character like ChatGPT/Claude
+- Messages saved immediately to database before AI call
+- Tab switch or minimize no longer loses your response
+- Focus-sync refreshes conversation when returning to tab
 
-**Credit System**
-- Introduced a new credit-based usage system
-- Beta users start with **30 credits**
-- Interview messages cost 0.1 credits each
-- PRD Blueprint Suite generation costs 3 credits
-- Project creation remains **FREE**
+**Dynamic PRD Generation**
+- Select your project type at creation: SaaS, Marketplace, Mobile, E-commerce, AI Product, etc.
+- PRDs now customized to your project type
+- Marketplace projects get Trust & Safety + Payment Integration PRDs
+- Mobile projects get Push Notifications + Mobile Architecture PRDs
+- AI Product projects get Prompt Engineering PRDs
 
-**Pricing Page**
-- New /pricing page with credit system details
-- Shows all credit costs upfront
-- Highlights beta tester benefits
+**Project Type Selector**
+- Beautiful dropdown in New Project modal
+- 9 project types with descriptions
+- Determines which PRD documents get generated
 
 ### 🐛 Bug Fixes
 
-**Chat Persistence**
-- Fixed bug where conversation history was lost when navigating away
-- Messages and blueprints now persist across sessions
-- Users can continue exactly where they left off
+**Credit Protection (Critical)**
+- Fixed: Credits no longer deducted before generation completes
+- Fixed: Full refund if all PRD generation fails
+- Fixed: Retry button no longer charges twice
+- Fixed: Duplicate generation requests return existing suite for free
+
+**AI Reliability**
+- API now tries all available keys before failing
+- Exponential backoff on rate limits
+- Better error recovery across all AI calls
+
+**Profile Page**
+- Now shows actual credit balance instead of "3/3"
+- Color-coded credit display (green/amber/red)
 
 ### 🎨 UI Improvements
-- Added "Coming Soon" badge for upcoming AI edit feature
-- Beautiful pricing cards with smooth animations
-- Feedback page with tabbed type selector`;
+- Dynamic Blueprint tabs (shows only generated PRDs)
+- Progress bar uses actual count from API
+- Better icons for new PRD types (Payments, Mobile, IoT, etc.)`;
 
 async function release() {
     if (!process.env.MONGODB_URI) {

@@ -5,10 +5,14 @@ import dbConnect from "@/lib/db";
 import { Project } from "@/lib/models";
 import mongoose from "mongoose";
 
+// Valid project types for dynamic PRD generation
+const PROJECT_TYPES = ["saas", "marketplace", "mobile", "ecommerce", "internal", "api", "ai-product", "cli", "iot"] as const;
+
 // Security: Zod schema for project input validation
 const createProjectSchema = z.object({
     title: z.string().min(1, "Title is required").max(200).trim(),
     description: z.string().max(2000).optional(),
+    projectType: z.enum(PROJECT_TYPES).optional().default("saas"),
 });
 
 // GET /api/projects - Fetch all projects for the authenticated user
@@ -29,6 +33,7 @@ export async function GET() {
             id: (p._id as mongoose.Types.ObjectId).toString(),
             title: p.title,
             description: p.description,
+            projectType: p.projectType || "saas",
             status: p.status,
             createdAt: p.createdAt,
             updatedAt: p.updatedAt,
@@ -70,7 +75,7 @@ export async function POST(request: Request) {
             );
         }
 
-        const { title, description } = validation.data;
+        const { title, description, projectType } = validation.data;
 
         await dbConnect();
 
@@ -95,6 +100,7 @@ export async function POST(request: Request) {
             userId: session.user.id,
             title: title.trim(),
             description: description?.trim() || "",
+            projectType: projectType,
             status: "DRAFT",
         });
 
@@ -103,11 +109,11 @@ export async function POST(request: Request) {
                 id: project._id.toString(),
                 title: project.title,
                 description: project.description,
+                projectType: project.projectType,
                 status: project.status,
                 createdAt: project.createdAt,
                 updatedAt: project.updatedAt,
             },
-            remainingToday: 3 - todayCount - 1,
         }, { status: 201 });
     } catch (error) {
         console.error("[API] POST /api/projects error:", error);

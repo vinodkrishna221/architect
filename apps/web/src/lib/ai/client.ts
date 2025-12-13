@@ -21,19 +21,69 @@ export async function callGLM(
     systemPrompt: string,
     userPrompt: string
 ): Promise<string> {
+    const maxRetries = API_KEYS.length;
+    let lastError: Error | null = null;
+
+    // Try each API key in rotation
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+            const client = new OpenAI({
+                baseURL: "https://openrouter.ai/api/v1",
+                apiKey: getNextApiKey(),
+            });
+
+            const response = await client.chat.completions.create({
+                model: "z-ai/glm-4.5-air:free",
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: userPrompt },
+                ],
+                max_tokens: 4096,
+            });
+
+            return response.choices[0]?.message?.content || "";
+        } catch (error) {
+            lastError = error as Error;
+            console.warn(`[AI] Key ${attempt + 1}/${maxRetries} failed:`, (error as Error).message);
+
+            // If rate limited, wait before trying next key
+            if ((error as { status?: number }).status === 429) {
+                await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1))); // Exponential backoff
+            }
+        }
+    }
+
+    // All keys failed
+    throw new Error(`All ${maxRetries} API keys failed. Last error: ${lastError?.message}`);
+}
+
+/**
+ * Streaming version of callGLM that yields content chunks as they arrive.
+ * Use this for real-time UI updates like ChatGPT/Claude typing effect.
+ */
+export async function* streamGLM(
+    systemPrompt: string,
+    userPrompt: string
+): AsyncGenerator<string, void, unknown> {
     const client = new OpenAI({
         baseURL: "https://openrouter.ai/api/v1",
         apiKey: getNextApiKey(),
     });
 
-    const response = await client.chat.completions.create({
+    const stream = await client.chat.completions.create({
         model: "z-ai/glm-4.5-air:free",
         messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
         ],
         max_tokens: 4096,
+        stream: true,
     });
 
-    return response.choices[0]?.message?.content || "";
+    for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content;
+        if (content) {
+            yield content;
+        }
+    }
 }

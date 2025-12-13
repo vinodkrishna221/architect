@@ -32,9 +32,9 @@ interface DashboardState {
     isLoading: boolean;
     error: string | null;
 
-    // User stats
-    remainingToday: number;
-    dailyLimit: number;
+    // User stats (credit system)
+    credits: number;
+    maxCredits: number;
 
     // Actions
     openProject: (id: string) => void;
@@ -45,7 +45,7 @@ interface DashboardState {
 
     // API actions
     fetchProjects: () => Promise<void>;
-    createProject: (title: string, description?: string) => Promise<ApiProject | null>;
+    createProject: (title: string, description?: string, projectType?: string) => Promise<ApiProject | null>;
     deleteProject: (id: string) => Promise<boolean>;
     fetchUserStats: () => Promise<void>;
 }
@@ -57,8 +57,8 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     projects: [],
     isLoading: false,
     error: null,
-    remainingToday: 3,
-    dailyLimit: 3,
+    credits: 30,
+    maxCredits: 30,
 
     openProject: (id: string) => {
         const project = get().projects.find(p => p.id === id) || MOCK_PROJECTS.find(p => p.id === id);
@@ -122,12 +122,12 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         }
     },
 
-    createProject: async (title: string, description?: string) => {
+    createProject: async (title: string, description?: string, projectType?: string) => {
         try {
             const response = await fetch('/api/projects', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, description }),
+                body: JSON.stringify({ title, description, projectType: projectType || 'saas' }),
             });
 
             const data = await response.json();
@@ -141,7 +141,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
             set((state) => ({
                 projects: [newProject, ...state.projects],
                 dockItems: [...state.dockItems, newProject],
-                remainingToday: data.remainingToday ?? state.remainingToday - 1,
+                credits: data.credits ?? state.credits,
             }));
 
             return data.project;
@@ -186,8 +186,8 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
             const data = await response.json();
             set({
-                remainingToday: data.remainingToday ?? 3,
-                dailyLimit: data.dailyLimit ?? 3,
+                credits: data.credits ?? 30,
+                maxCredits: data.maxCredits ?? 30,
             });
         } catch (error) {
             console.error('Error fetching user stats:', error);

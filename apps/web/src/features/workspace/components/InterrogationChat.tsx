@@ -1,10 +1,36 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWorkspaceStore } from "../store";
 import { cn } from "@/lib/utils";
 import { Bot, User, ArrowUp, Sparkles, CheckCircle, Loader2 } from "lucide-react";
+
+// SSE event data types
+interface SSEStartData {
+    conversationId: string;
+    questionsAsked: number;
+}
+
+interface SSEChunkData {
+    content: string;
+}
+
+interface SSEDoneData {
+    question: string;
+    category: "users" | "problem" | "technical" | "scope";
+    isComplete: boolean;
+    completionReason?: string | null;
+    questionsAsked: number;
+}
+
+interface SSEErrorData {
+    error: string;
+    message?: string;
+    remainingCredits?: number;
+}
+
+type SSEData = SSEStartData | SSEChunkData | SSEDoneData | SSEErrorData;
 
 interface InterrogationChatProps {
     projectId: string;
@@ -13,7 +39,7 @@ interface InterrogationChatProps {
 export function InterrogationChat({ projectId }: InterrogationChatProps) {
     const [input, setInput] = useState("");
     const [initialDescription, setInitialDescription] = useState("");
-    const [isInitialLoading, setIsInitialLoading] = useState(true); // Track initial load
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
     const scrollRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -22,6 +48,7 @@ export function InterrogationChat({ projectId }: InterrogationChatProps) {
         messages,
         isComplete,
         isLoading,
+        isStreaming,
         questionsAsked,
         setConversationId,
         addMessage,
@@ -29,6 +56,9 @@ export function InterrogationChat({ projectId }: InterrogationChatProps) {
         setLoading,
         setQuestionsAsked,
         loadConversation,
+        startStreamingMessage,
+        updateStreamingMessage,
+        finalizeStreamingMessage,
     } = useWorkspaceStore();
 
     // Load existing conversation on mount
@@ -74,31 +104,121 @@ export function InterrogationChat({ projectId }: InterrogationChatProps) {
         }
     }, [input]);
 
+    // Sync conversation state when tab regains focus (resilience for tab-switching)
+    const syncConversation = useCallback(async () => {
+        if (!conversationId || isLoading || isStreaming) return;
+        try {
+            const res = await fetch(`/api/ai/conversation/${projectId}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.exists) {
+                    loadConversation({
+                        conversationId: data.conversationId,
+                        messages: data.messages,
+                        questionsAsked: data.questionsAsked,
+                        isComplete: data.isComplete,
+                        suiteId: data.suiteId,
+                        blueprints: data.blueprints,
+                    });
+                }
+            }
+        } catch (error) {
+            console.error("Failed to sync conversation:", error);
+        }
+    }, [conversationId, projectId, isLoading, isStreaming, loadConversation]);
+
+    useEffect(() => {
+        const handleFocus = () => {
+            syncConversation();
+        };
+        window.addEventListener("focus", handleFocus);
+        return () => window.removeEventListener("focus", handleFocus);
+    }, [syncConversation]);
+
+    // Parse SSE events from a chunk of text
+    const parseSSEEvents = (text: string): Array<{ event: string; data: SSEData }> => {
+        const events: Array<{ event: string; data: SSEData }> = [];
+        const lines = text.split("\n");
+        let currentEvent = "";
+        let currentData = "";
+
+        for (const line of lines) {
+            if (line.startsWith("event: ")) {
+                currentEvent = line.slice(7);
+            } else if (line.startsWith("data: ")) {
+                currentData = line.slice(6);
+            } else if (line === "" && currentEvent && currentData) {
+                try {
+                    events.push({ event: currentEvent, data: JSON.parse(currentData) });
+                } catch {
+                    console.warn("Failed to parse SSE data:", currentData);
+                }
+                currentEvent = "";
+                currentData = "";
+            }
+        }
+        return events;
+    };
+
     const startConversation = async () => {
         if (!initialDescription.trim() || isLoading) return;
 
         setLoading(true);
+        startStreamingMessage();
+
         try {
-            const res = await fetch("/api/ai/interrogate", {
+            const res = await fetch("/api/ai/interrogate-stream", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ projectId, initialDescription }),
             });
 
-            if (!res.ok) {
+            if (!res.ok || !res.body) {
                 throw new Error("Failed to start interview");
             }
 
-            const data = await res.json();
-            setConversationId(data.conversationId);
-            addMessage({ role: "assistant", content: data.question, category: data.category });
-            setQuestionsAsked(data.questionsAsked);
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = "";
+            let receivedConversationId = "";
+            let finalCategory: "users" | "problem" | "technical" | "scope" | undefined;
 
-            if (data.isComplete) {
-                setComplete(true);
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const events = parseSSEEvents(buffer);
+                buffer = ""; // Clear buffer after parsing
+
+                for (const { event, data } of events) {
+                    switch (event) {
+                        case "start":
+                            receivedConversationId = (data as SSEStartData).conversationId;
+                            setConversationId(receivedConversationId);
+                            break;
+                        case "chunk":
+                            updateStreamingMessage((data as SSEChunkData).content);
+                            break;
+                        case "done": {
+                            const doneData = data as SSEDoneData;
+                            finalCategory = doneData.category;
+                            setQuestionsAsked(doneData.questionsAsked);
+                            if (doneData.isComplete) {
+                                setComplete(true);
+                            }
+                            break;
+                        }
+                        case "error":
+                            throw new Error((data as SSEErrorData).error || "Stream error");
+                    }
+                }
             }
+
+            finalizeStreamingMessage(finalCategory);
         } catch (error) {
             console.error("Failed to start conversation:", error);
+            finalizeStreamingMessage();
             addMessage({
                 role: "assistant",
                 content: "Sorry, something went wrong. Please try again.",
@@ -115,27 +235,56 @@ export function InterrogationChat({ projectId }: InterrogationChatProps) {
         setInput("");
         addMessage({ role: "user", content: userMessage });
         setLoading(true);
+        startStreamingMessage();
 
         try {
-            const res = await fetch("/api/ai/interrogate", {
+            const res = await fetch("/api/ai/interrogate-stream", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ conversationId, userMessage }),
             });
 
-            if (!res.ok) {
+            if (!res.ok || !res.body) {
                 throw new Error("Failed to send answer");
             }
 
-            const data = await res.json();
-            addMessage({ role: "assistant", content: data.question, category: data.category });
-            setQuestionsAsked(data.questionsAsked);
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = "";
+            let finalCategory: "users" | "problem" | "technical" | "scope" | undefined;
 
-            if (data.isComplete) {
-                setComplete(true);
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const events = parseSSEEvents(buffer);
+                buffer = "";
+
+                for (const { event, data } of events) {
+                    switch (event) {
+                        case "chunk":
+                            updateStreamingMessage((data as SSEChunkData).content);
+                            break;
+                        case "done": {
+                            const doneData = data as SSEDoneData;
+                            finalCategory = doneData.category;
+                            setQuestionsAsked(doneData.questionsAsked);
+                            if (doneData.isComplete) {
+                                setComplete(true);
+                            }
+                            break;
+                        }
+                        case "error":
+                            throw new Error((data as SSEErrorData).error || "Stream error");
+                    }
+                }
             }
+
+            finalizeStreamingMessage(finalCategory);
         } catch (error) {
             console.error("Failed to send answer:", error);
+            finalizeStreamingMessage();
             addMessage({
                 role: "assistant",
                 content: "Sorry, something went wrong. Please try again.",

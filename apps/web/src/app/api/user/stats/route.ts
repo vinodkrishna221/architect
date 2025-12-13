@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import dbConnect from "@/lib/db";
 import { Project } from "@/lib/models";
+import { getCreditBalance, DEFAULT_CREDITS } from "@/lib/credits";
 
 // GET /api/user/stats - Get user statistics
 export async function GET() {
     try {
         const session = await auth();
-        if (!session?.user?.id) {
+        if (!session?.user?.id || !session?.user?.email) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
@@ -22,21 +23,15 @@ export async function GET() {
             status: "COMPLETED"
         });
 
-        // Get today's usage for rate limiting display
-        const startOfDay = new Date();
-        startOfDay.setHours(0, 0, 0, 0);
-
-        const todayCount = await Project.countDocuments({
-            userId: session.user.id,
-            createdAt: { $gte: startOfDay }
-        });
+        // Get actual credit balance from Waitlist collection
+        const credits = await getCreditBalance(session.user.email);
 
         return NextResponse.json({
             projectCount,
             blueprintCount,
-            todayUsage: todayCount,
-            dailyLimit: 3,
-            remainingToday: Math.max(0, 3 - todayCount),
+            // Credit system (not daily limits - actual credits)
+            credits,
+            maxCredits: DEFAULT_CREDITS, // 30 for beta users
         });
     } catch (error) {
         console.error("[API] GET /api/user/stats error:", error);

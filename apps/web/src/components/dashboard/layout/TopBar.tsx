@@ -7,7 +7,7 @@ import { useDashboardStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
 
 export function TopBar() {
-    const { remainingToday, dailyLimit, fetchUserStats } = useDashboardStore();
+    const { credits, maxCredits, fetchUserStats } = useDashboardStore();
     const router = useRouter();
 
     useEffect(() => {
@@ -33,8 +33,8 @@ export function TopBar() {
                 {/* Credits Display */}
                 <MagneticButton className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 transition-colors">
                     <span className="text-[10px] font-mono text-zinc-400 tracking-wider">CREDITS:</span>
-                    <span className={`text-xs font-mono font-bold ${remainingToday > 0 ? "text-emerald-400" : "text-red-400"}`}>
-                        {remainingToday}/{dailyLimit}
+                    <span className={`text-xs font-mono font-bold ${credits > 5 ? "text-emerald-400" : credits > 0 ? "text-amber-400" : "text-red-400"}`}>
+                        {credits.toFixed(1)}/{maxCredits}
                     </span>
                 </MagneticButton>
 

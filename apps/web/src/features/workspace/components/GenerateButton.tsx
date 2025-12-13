@@ -47,7 +47,7 @@ export function GenerateButton({ className }: GenerateButtonProps) {
             const blueprints: Blueprint[] = data.blueprints;
 
             setBlueprints(blueprints);
-            setGenerationProgress(data.suite.completedCount, 6);
+            setGenerationProgress(data.suite.completedCount, data.suite.totalCount || 6);
 
             // Check if generation is complete
             if (data.suite.status === "complete" || data.suite.status === "partial" || data.suite.status === "error") {
@@ -68,7 +68,7 @@ export function GenerateButton({ className }: GenerateButtonProps) {
 
         setError(null);
         setGenerating(true);
-        setGenerationProgress(0, 6);
+        // Don't set initial progress here - wait for API response with dynamic totalCount
 
         try {
             const res = await fetch("/api/ai/generate-suite", {
@@ -84,6 +84,21 @@ export function GenerateButton({ className }: GenerateButtonProps) {
 
             const data = await res.json();
             setSuiteId(data.suiteId);
+
+            // Check if this is an existing suite (no charge was made)
+            if (data.isExisting) {
+                // Just set progress from existing data, no need to poll
+                setGenerationProgress(data.completedCount, data.totalCount || 6);
+                if (data.status === "complete" || data.status === "partial") {
+                    setGenerating(false);
+                    // Fetch blueprints once
+                    await pollBlueprints(data.suiteId);
+                    return;
+                }
+            } else {
+                // New generation - set initial progress
+                setGenerationProgress(0, data.totalCount || 6);
+            }
 
             // Fetch initial blueprints
             await pollBlueprints(data.suiteId);
