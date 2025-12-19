@@ -4,7 +4,15 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWorkspaceStore } from "../store";
 import { cn } from "@/lib/utils";
-import { Bot, User, ArrowUp, Sparkles, CheckCircle, Loader2 } from "lucide-react";
+import { Bot, User, ArrowUp, Sparkles, CheckCircle, Loader2, Users, HelpCircle, Cpu, Target, ChevronDown } from "lucide-react";
+
+// Category configuration for progress indicator
+const CATEGORIES = [
+    { id: "users", icon: Users, label: "Users" },
+    { id: "problem", icon: HelpCircle, label: "Problem" },
+    { id: "technical", icon: Cpu, label: "Technical" },
+    { id: "scope", icon: Target, label: "Scope" },
+] as const;
 
 // SSE event data types
 interface SSEStartData {
@@ -40,8 +48,17 @@ export function InterrogationChat({ projectId }: InterrogationChatProps) {
     const [input, setInput] = useState("");
     const [initialDescription, setInitialDescription] = useState("");
     const [isInitialLoading, setIsInitialLoading] = useState(true);
+    const [showScrollButton, setShowScrollButton] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    // Calculate current category based on questions asked (roughly 4 questions per category)
+    const getCurrentCategoryIndex = (qAsked: number): number => {
+        if (qAsked <= 3) return 0; // users
+        if (qAsked <= 7) return 1; // problem
+        if (qAsked <= 11) return 2; // technical
+        return 3; // scope
+    };
 
     const {
         conversationId,
@@ -89,12 +106,26 @@ export function InterrogationChat({ projectId }: InterrogationChatProps) {
         loadExistingConversation();
     }, [projectId, loadConversation]);
 
-    // Auto-scroll to bottom when messages change
+    // Auto-scroll to bottom when messages change (only if near bottom)
     useEffect(() => {
-        if (scrollRef.current) {
+        if (scrollRef.current && !showScrollButton) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
-    }, [messages, isLoading]);
+    }, [messages, isLoading, showScrollButton]);
+
+    // Track scroll position to show "scroll to bottom" button
+    const handleScroll = useCallback(() => {
+        if (!scrollRef.current) return;
+        const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+        const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+        setShowScrollButton(!isNearBottom);
+    }, []);
+
+    const scrollToBottom = () => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+        }
+    };
 
     // Auto-resize textarea
     useEffect(() => {
@@ -392,28 +423,91 @@ export function InterrogationChat({ projectId }: InterrogationChatProps) {
     // Chat interface
     return (
         <div className="flex flex-col h-full bg-[#0A0A0A] border-r border-white/5 relative overflow-hidden">
-            {/* Header */}
-            <div className="h-14 border-b border-white/5 flex items-center justify-between px-6 bg-black/20 backdrop-blur-sm z-10 shrink-0">
-                <div className="flex items-center gap-2">
-                    <div className={cn(
-                        "w-2 h-2 rounded-full shadow-lg",
-                        isComplete
-                            ? "bg-green-500 shadow-green-500/50"
-                            : "bg-blue-500 shadow-blue-500/50 animate-pulse"
-                    )} />
-                    <span className="text-sm font-mono text-white/60 tracking-wider">
-                        {isComplete ? "INTERVIEW_COMPLETE" : "INTERROGATION_ACTIVE"}
-                    </span>
+            {/* Header with Progress Indicator */}
+            <div className="border-b border-white/5 bg-black/20 backdrop-blur-sm z-10 shrink-0">
+                {/* Top row: Status and Question Count */}
+                <div className="h-12 flex items-center justify-between px-6">
+                    <div className="flex items-center gap-2">
+                        <motion.div
+                            className={cn(
+                                "w-2 h-2 rounded-full shadow-lg",
+                                isComplete
+                                    ? "bg-green-500 shadow-green-500/50"
+                                    : "bg-blue-500 shadow-blue-500/50"
+                            )}
+                            animate={isComplete ? {} : { scale: [1, 1.2, 1], opacity: [0.7, 1, 0.7] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                        />
+                        <span className="text-sm font-mono text-white/60 tracking-wider">
+                            {isComplete ? "INTERVIEW_COMPLETE" : "INTERROGATION_ACTIVE"}
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="text-xs text-white/40 font-mono bg-white/5 px-2 py-1 rounded">
+                            Q{questionsAsked}/15
+                        </div>
+                    </div>
                 </div>
-                <div className="text-xs text-white/40 font-mono">
-                    Q{questionsAsked}/15
+
+                {/* Category Progress Bar */}
+                <div className="px-6 pb-3">
+                    <div className="flex items-center gap-1">
+                        {CATEGORIES.map((cat, idx) => {
+                            const currentIdx = getCurrentCategoryIndex(questionsAsked);
+                            const isActive = idx === currentIdx && !isComplete;
+                            const isCompleted = idx < currentIdx || isComplete;
+                            const Icon = cat.icon;
+
+                            return (
+                                <div key={cat.id} className="flex items-center flex-1">
+                                    {/* Category Icon */}
+                                    <motion.div
+                                        className={cn(
+                                            "w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-300 relative",
+                                            isCompleted && "bg-green-500/20 text-green-400",
+                                            isActive && "bg-blue-500/20 text-blue-400",
+                                            !isCompleted && !isActive && "bg-white/5 text-white/20"
+                                        )}
+                                        animate={isActive ? { scale: [1, 1.05, 1] } : {}}
+                                        transition={{ duration: 1.5, repeat: Infinity }}
+                                        title={cat.label}
+                                    >
+                                        <Icon className="w-3.5 h-3.5" />
+                                        {isActive && (
+                                            <motion.div
+                                                className="absolute inset-0 rounded-lg bg-blue-500/20"
+                                                animate={{ opacity: [0, 0.5, 0] }}
+                                                transition={{ duration: 2, repeat: Infinity }}
+                                            />
+                                        )}
+                                    </motion.div>
+
+                                    {/* Progress Line (except last) */}
+                                    {idx < CATEGORIES.length - 1 && (
+                                        <div className="flex-1 h-0.5 mx-1 bg-white/5 rounded-full overflow-hidden">
+                                            <motion.div
+                                                className={cn(
+                                                    "h-full rounded-full",
+                                                    isCompleted ? "bg-green-500/50" : "bg-white/10"
+                                                )}
+                                                initial={{ width: "0%" }}
+                                                animate={{ width: isCompleted ? "100%" : isActive ? "50%" : "0%" }}
+                                                transition={{ duration: 0.5 }}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
 
             {/* Messages Area */}
             <div
                 ref={scrollRef}
-                className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent pb-32"
+                onScroll={handleScroll}
+                className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent pb-40"
             >
                 <AnimatePresence initial={false} mode="popLayout">
                     {messages.map((msg) => (
@@ -466,17 +560,22 @@ export function InterrogationChat({ projectId }: InterrogationChatProps) {
                     ))}
                 </AnimatePresence>
 
-                {/* Loading Indicator */}
+                {/* Loading Indicator with Glow Effect */}
                 {isLoading && (
                     <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="flex gap-4"
                     >
-                        <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
+                        <motion.div
+                            className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 relative"
+                            animate={{ boxShadow: ["0 0 0 rgba(59,130,246,0)", "0 0 20px rgba(59,130,246,0.3)", "0 0 0 rgba(59,130,246,0)"] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                        >
                             <Bot className="w-4 h-4" />
-                        </div>
-                        <div className="bg-white/5 rounded-2xl p-4 border border-white/5 flex items-center gap-1.5 h-[52px]">
+                        </motion.div>
+                        <div className="bg-white/5 rounded-2xl p-4 border border-white/5 flex items-center gap-2 h-[52px]">
+                            <span className="text-white/40 text-sm mr-1">Thinking</span>
                             <motion.div
                                 className="w-1.5 h-1.5 rounded-full bg-blue-400"
                                 animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
@@ -496,23 +595,61 @@ export function InterrogationChat({ projectId }: InterrogationChatProps) {
                     </motion.div>
                 )}
 
-                {/* Completion Banner */}
+                {/* Enhanced Completion Banner */}
                 {isComplete && (
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 flex items-center gap-3"
+                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                        className="bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-green-500/10 border border-green-500/30 rounded-xl p-5 relative overflow-hidden"
                     >
-                        <CheckCircle className="w-5 h-5 text-green-400 shrink-0" />
-                        <div>
-                            <p className="text-green-400 font-medium">Interview Complete!</p>
-                            <p className="text-green-400/60 text-sm">
-                                Ready to generate your blueprints. Click the button below.
-                            </p>
+                        {/* Animated background glow */}
+                        <motion.div
+                            className="absolute inset-0 bg-gradient-to-r from-green-500/0 via-green-500/10 to-green-500/0"
+                            animate={{ x: ["-100%", "100%"] }}
+                            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                        />
+
+                        <div className="relative flex items-center gap-4">
+                            <motion.div
+                                className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center"
+                                animate={{ scale: [1, 1.1, 1] }}
+                                transition={{ duration: 2, repeat: Infinity }}
+                            >
+                                <CheckCircle className="w-6 h-6 text-green-400" />
+                            </motion.div>
+                            <div>
+                                <p className="text-green-400 font-semibold text-lg flex items-center gap-2">
+                                    Interview Complete!
+                                    <Sparkles className="w-4 h-4 text-yellow-400" />
+                                </p>
+                                <p className="text-green-400/70 text-sm">
+                                    Your project vision is ready. Generate blueprints to see your ideas take shape.
+                                </p>
+                            </div>
                         </div>
                     </motion.div>
                 )}
             </div>
+
+            {/* Gradient Fade Overlay */}
+            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/80 to-transparent pointer-events-none z-10" />
+
+            {/* Scroll to Bottom Button */}
+            <AnimatePresence>
+                {showScrollButton && (
+                    <motion.button
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        onClick={scrollToBottom}
+                        className="absolute bottom-28 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-1.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-xs text-white/70 hover:bg-white/20 hover:text-white transition-all shadow-lg"
+                    >
+                        <ChevronDown className="w-3 h-3" />
+                        New messages
+                    </motion.button>
+                )}
+            </AnimatePresence>
 
             {/* Input Area */}
             {!isComplete && (
@@ -526,14 +663,18 @@ export function InterrogationChat({ projectId }: InterrogationChatProps) {
                         >
                             <div className="relative flex items-end p-3 gap-3">
                                 <div className="pb-2 pl-1">
-                                    <div className={cn(
-                                        "w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300",
-                                        isLoading
-                                            ? "bg-blue-500/20 text-blue-400 animate-pulse"
-                                            : "bg-white/5 text-white/40"
-                                    )}>
+                                    <motion.div
+                                        className={cn(
+                                            "w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300",
+                                            isLoading
+                                                ? "bg-blue-500/20 text-blue-400"
+                                                : "bg-white/5 text-white/40"
+                                        )}
+                                        animate={isLoading ? { scale: [1, 1.1, 1] } : {}}
+                                        transition={{ duration: 1, repeat: Infinity }}
+                                    >
                                         <Sparkles className="w-4 h-4" />
-                                    </div>
+                                    </motion.div>
                                 </div>
 
                                 <div className="flex-1 py-2">
@@ -542,7 +683,7 @@ export function InterrogationChat({ projectId }: InterrogationChatProps) {
                                         value={input}
                                         onChange={(e) => setInput(e.target.value)}
                                         onKeyDown={handleKeyDown}
-                                        placeholder="Type your answer..."
+                                        placeholder={isLoading ? "AI is thinking..." : "Type your answer... (Shift+Enter for new line)"}
                                         className="w-full bg-transparent border-none text-white placeholder-white/30 resize-none focus:ring-0 min-h-[24px] max-h-[200px] p-0 text-base leading-relaxed scrollbar-hide outline-none"
                                         rows={1}
                                         disabled={isLoading}

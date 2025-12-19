@@ -25,6 +25,7 @@ interface BlueprintState {
     activeBlueprint: string | null;
     isGenerating: boolean;
     generationProgress: { completed: number; total: number };
+    activeTab: "blueprints" | "prompts";
 }
 
 // Combined workspace state
@@ -60,6 +61,8 @@ interface WorkspaceState extends InterrogationState, BlueprintState {
         suiteId?: string | null;
         blueprints?: Blueprint[];
     }) => void;
+
+    setActiveTab: (tab: "blueprints" | "prompts") => void;
 }
 
 const initialState: InterrogationState & BlueprintState = {
@@ -77,6 +80,7 @@ const initialState: InterrogationState & BlueprintState = {
     activeBlueprint: null,
     isGenerating: false,
     generationProgress: { completed: 0, total: 0 }, // Total comes dynamically from API based on project type
+    activeTab: "blueprints",
 };
 
 export const useWorkspaceStore = create<WorkspaceState>((set) => ({
@@ -197,4 +201,6 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
                 activeBlueprint: state.activeBlueprint || data.blueprints[0]?.type || null,
             }),
         })),
+
+    setActiveTab: (tab) => set({ activeTab: tab }),
 }));

@@ -22,10 +22,12 @@ export function Dock({ position = "bottom" }: DockProps) {
     return (
         <>
             <motion.div
+                drag
+                dragMomentum={false}
                 onMouseMove={(e) => mouseX.set(e.pageX)}
                 onMouseLeave={() => mouseX.set(Infinity)}
                 className={cn(
-                    "fixed left-1/2 -translate-x-1/2 h-16 px-4 pb-3 rounded-2xl bg-black/80 backdrop-blur-2xl border border-white/10 ring-1 ring-white/5 flex items-end gap-4 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.8)] z-50",
+                    "fixed left-1/2 -translate-x-1/2 h-16 px-4 pb-3 rounded-2xl bg-black/80 backdrop-blur-2xl border border-white/10 ring-1 ring-white/5 flex items-end gap-4 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.8)] z-50 cursor-move",
                     position === "bottom" ? "bottom-6" : "top-6"
                 )}
             >

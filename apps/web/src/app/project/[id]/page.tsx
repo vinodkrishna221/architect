@@ -31,10 +31,7 @@ export default function WorkspacePage() {
     const containerRef = useRef<HTMLDivElement>(null);
 
     // Workspace store state
-    const { isComplete, blueprints, reset, suiteId } = useWorkspaceStore();
-
-    // Right panel state
-    const [rightPanelTab, setRightPanelTab] = useState<"blueprints" | "prompts">("blueprints");
+    const { isComplete, blueprints, reset, suiteId, activeTab, setActiveTab } = useWorkspaceStore();
 
     // Auto-switch to prompts tab if blueprints are mostly complete (optional enhancement)
     // For now we default to blueprints
@@ -170,7 +167,7 @@ export default function WorkspacePage() {
         <div
             ref={containerRef}
             className={cn(
-                "flex h-screen w-full bg-black overflow-hidden font-sans relative",
+                "flex h-screen w-full bg-black overflow-hidden font-sans relative pt-20",
                 isDragging ? "cursor-col-resize select-none" : ""
             )}
         >
@@ -231,10 +228,10 @@ export default function WorkspacePage() {
                         {/* Tabs */}
                         <div className="flex items-center bg-black/40 rounded-lg p-1 border border-white/5">
                             <button
-                                onClick={() => setRightPanelTab("blueprints")}
+                                onClick={() => setActiveTab("blueprints")}
                                 className={cn(
                                     "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
-                                    rightPanelTab === "blueprints"
+                                    activeTab === "blueprints"
                                         ? "bg-white/10 text-white shadow-sm"
                                         : "text-white/40 hover:text-white/60"
                                 )}
@@ -243,10 +240,10 @@ export default function WorkspacePage() {
                                 Blueprints
                             </button>
                             <button
-                                onClick={() => setRightPanelTab("prompts")}
+                                onClick={() => setActiveTab("prompts")}
                                 className={cn(
                                     "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
-                                    rightPanelTab === "prompts"
+                                    activeTab === "prompts"
                                         ? "bg-emerald-500/20 text-emerald-400 shadow-sm border border-emerald-500/20"
                                         : "text-white/40 hover:text-white/60"
                                 )}
@@ -267,7 +264,7 @@ export default function WorkspacePage() {
 
                     {/* Content Area */}
                     <div className="h-[calc(100%-48px)] relative">
-                        {rightPanelTab === "blueprints" ? (
+                        {activeTab === "blueprints" ? (
                             <BlueprintViewer />
                         ) : (
                             <PromptSequencePanel

@@ -123,6 +123,7 @@ export function BlueprintViewer() {
         setActiveBlueprint,
         isGenerating,
         generationProgress,
+        setActiveTab,
     } = useWorkspaceStore();
 
     // Copy to clipboard functionality
@@ -339,6 +340,19 @@ export function BlueprintViewer() {
                                     <p className="text-white/40 text-sm mt-2">
                                         Click &quot;Resume Generation&quot; to continue
                                     </p>
+                                </div>
+                            )}
+
+                            {/* Start Creating Prompts Button - Show when current blueprint is complete */}
+                            {currentBlueprint.status === "complete" && (
+                                <div className="mt-12 pt-8 border-t border-white/5 flex justify-center pb-8">
+                                    <button
+                                        onClick={() => setActiveTab("prompts")}
+                                        className="group relative px-6 py-3 bg-blue-500 hover:bg-blue-400 text-white font-medium rounded-xl transition-all shadow-lg hover:shadow-blue-500/25 active:scale-95 flex items-center gap-2"
+                                    >
+                                        <span>Start Creating Prompts</span>
+                                        <Terminal className="w-4 h-4" />
+                                    </button>
                                 </div>
                             )}
                         </motion.div>
