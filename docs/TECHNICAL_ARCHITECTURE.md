@@ -420,17 +420,17 @@ export const DEFAULT_CREDITS = 30; // Beta users
 
 ```mermaid
 erDiagram
-    User ||--o{ Project : "creates"
-    User ||--o{ Feedback : "submits"
-    Waitlist ||--|| User : "becomes"
+    User ||--o{ Project : creates
+    User ||--o{ Feedback : submits
+    Waitlist ||--|| User : becomes
     
-    Project ||--o| Conversation : "has one"
-    Project ||--o| BlueprintSuite : "has one"
+    Project ||--o| Conversation : has_one
+    Project ||--o| BlueprintSuite : has_one
     
-    Conversation ||--o{ Message : "contains"
+    Conversation ||--o{ Message : contains
     
-    BlueprintSuite ||--o{ Blueprint : "contains"
-    BlueprintSuite }o--|| Conversation : "references"
+    BlueprintSuite ||--o{ Blueprint : contains
+    BlueprintSuite }o--|| Conversation : references
     
     User {
         ObjectId _id PK
@@ -438,7 +438,7 @@ erDiagram
         string email UK
         Date emailVerified
         string image
-        number credits "default: 30"
+        number credits
         Date createdAt
         Date updatedAt
     }
@@ -450,10 +450,10 @@ erDiagram
         string jobRole
         string referralSource
         string reason
-        enum status "PENDING|APPROVED|REDEEMED"
+        string status
         Date lastLoginAttempt
-        string accessCode "hashed"
-        number credits "default: 30"
+        string accessCode
+        number credits
         Date createdAt
     }
     
@@ -462,8 +462,8 @@ erDiagram
         ObjectId userId FK
         string title
         string description
-        enum projectType "saas|marketplace|mobile|..."
-        enum status "DRAFT|GENERATING|COMPLETED|AWAITING_ANSWERS"
+        string projectType
+        string status
         Date createdAt
         Date updatedAt
     }
@@ -473,8 +473,8 @@ erDiagram
         ObjectId projectId FK
         ObjectId userId FK
         string initialDescription
-        array messages "embedded"
-        enum status "in_progress|complete|abandoned"
+        array messages
+        string status
         number questionsAsked
         boolean isReadyForBlueprints
         string projectType
@@ -484,9 +484,9 @@ erDiagram
     
     BlueprintSuite {
         ObjectId _id PK
-        ObjectId projectId FK_UK
+        ObjectId projectId FK
         ObjectId conversationId FK
-        enum status "generating|complete|partial|error"
+        string status
         number completedCount
         number totalCount
         array selectedTypes
@@ -497,22 +497,23 @@ erDiagram
         ObjectId suiteId FK
         string type
         string title
-        string content "markdown"
-        enum status "pending|generating|complete|error"
+        string content
+        string status
     }
     
     Feedback {
         ObjectId _id PK
         ObjectId userId FK
-        enum type "feedback|feature|bug"
+        string type
         string email
         string subject
         string description
-        enum priority "low|medium|high|critical"
-        enum status "pending|reviewed|resolved"
+        string priority
+        string status
         string browserInfo
     }
 ```
+
 
 ### ASCII Collection Overview
 
