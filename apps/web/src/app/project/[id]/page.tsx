@@ -12,6 +12,8 @@ import {
     GenerateButton,
     useWorkspaceStore,
 } from "@/features/workspace";
+import { PromptSequencePanel } from "@/components/workspace/PromptSequencePanel";
+import { Terminal, FileCode } from "lucide-react";
 
 type FocusMode = "split" | "chat" | "blueprint";
 type MobileTab = "chat" | "blueprints";
@@ -29,7 +31,13 @@ export default function WorkspacePage() {
     const containerRef = useRef<HTMLDivElement>(null);
 
     // Workspace store state
-    const { isComplete, blueprints, reset } = useWorkspaceStore();
+    const { isComplete, blueprints, reset, suiteId } = useWorkspaceStore();
+
+    // Right panel state
+    const [rightPanelTab, setRightPanelTab] = useState<"blueprints" | "prompts">("blueprints");
+
+    // Auto-switch to prompts tab if blueprints are mostly complete (optional enhancement)
+    // For now we default to blueprints
 
     // Detect mobile screen
     useEffect(() => {
@@ -218,16 +226,57 @@ export default function WorkspacePage() {
                     className="h-full bg-[#0F0F0F] relative overflow-hidden"
                 >
                     {/* Maximize/Minimize Button */}
-                    <div className="absolute top-4 right-4 z-50 flex gap-2">
+                    {/* Header Bar with Tabs and Actions */}
+                    <div className="flex items-center justify-between p-2 border-b border-white/5 bg-black/20">
+                        {/* Tabs */}
+                        <div className="flex items-center bg-black/40 rounded-lg p-1 border border-white/5">
+                            <button
+                                onClick={() => setRightPanelTab("blueprints")}
+                                className={cn(
+                                    "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+                                    rightPanelTab === "blueprints"
+                                        ? "bg-white/10 text-white shadow-sm"
+                                        : "text-white/40 hover:text-white/60"
+                                )}
+                            >
+                                <FileCode className="w-3.5 h-3.5" />
+                                Blueprints
+                            </button>
+                            <button
+                                onClick={() => setRightPanelTab("prompts")}
+                                className={cn(
+                                    "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+                                    rightPanelTab === "prompts"
+                                        ? "bg-emerald-500/20 text-emerald-400 shadow-sm border border-emerald-500/20"
+                                        : "text-white/40 hover:text-white/60"
+                                )}
+                            >
+                                <Terminal className="w-3.5 h-3.5" />
+                                Implementation
+                            </button>
+                        </div>
+
+                        {/* Actions */}
                         <button
                             onClick={() => setFocusMode(focusMode === "blueprint" ? "split" : "blueprint")}
-                            className="p-2 bg-black/50 backdrop-blur text-white/40 hover:text-white rounded-lg transition-colors"
+                            className="p-1.5 hover:bg-white/5 text-white/40 hover:text-white rounded-lg transition-colors"
                         >
                             {focusMode === "blueprint" ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                         </button>
                     </div>
 
-                    <BlueprintViewer />
+                    {/* Content Area */}
+                    <div className="h-[calc(100%-48px)] relative">
+                        {rightPanelTab === "blueprints" ? (
+                            <BlueprintViewer />
+                        ) : (
+                            <PromptSequencePanel
+                                projectId={projectId}
+                                suiteId={suiteId || ""}
+                                suiteStatus={blueprints.length > 0 ? "complete" : "pending"} // Simplified check
+                            />
+                        )}
+                    </div>
                 </motion.div>
             )}
 

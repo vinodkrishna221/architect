@@ -4,49 +4,40 @@ import { sendEmail } from './email-helper';
 import * as dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 
-const version = 'v1.4.0';
-const title = 'AI Streaming & PRD Generation Improvements';
+const version = 'v1.5.0';
+const title = 'Blueprint Generation UX & Reliability';
 const content = `### ✨ New Features
 
-**Real-time AI Streaming**
-- AI responses now stream character-by-character like ChatGPT/Claude
-- Messages saved immediately to database before AI call
-- Tab switch or minimize no longer loses your response
-- Focus-sync refreshes conversation when returning to tab
+**Context-Aware Blueprint Generation**
+- Button now shows current state: "Generate Blueprints" or "Resume Generation"
+- Interrupted generation? Click "Resume" to continue FOR FREE
+- Clear info text explains what will happen before you click
+- "Uses 3 credits" for fresh generation, "No additional cost" for resume
 
-**Dynamic PRD Generation**
-- Select your project type at creation: SaaS, Marketplace, Mobile, E-commerce, AI Product, etc.
-- PRDs now customized to your project type
-- Marketplace projects get Trust & Safety + Payment Integration PRDs
-- Mobile projects get Push Notifications + Mobile Architecture PRDs
-- AI Product projects get Prompt Engineering PRDs
+**Resume Mode**
+- If generation stopped midway, pending PRDs are now detected automatically
+- Click Resume to continue from where you left off
+- No duplicate charges - existing suites are reused
 
-**Project Type Selector**
-- Beautiful dropdown in New Project modal
-- 9 project types with descriptions
-- Determines which PRD documents get generated
+**Improved Pending State**
+- PRDs waiting to generate now show "Queued for generation"
+- Clear instructions: "Click Resume Generation to continue"
 
 ### 🐛 Bug Fixes
 
-**Credit Protection (Critical)**
-- Fixed: Credits no longer deducted before generation completes
-- Fixed: Full refund if all PRD generation fails
-- Fixed: Retry button no longer charges twice
-- Fixed: Duplicate generation requests return existing suite for free
+**API Key Reliability**
+- Expanded support from 3 to 10 API keys for better rate limit handling
+- Added retry logic with key rotation to streaming AI calls
+- Better recovery when hitting rate limits
 
-**AI Reliability**
-- API now tries all available keys before failing
-- Exponential backoff on rate limits
-- Better error recovery across all AI calls
-
-**Profile Page**
-- Now shows actual credit balance instead of "3/3"
-- Color-coded credit display (green/amber/red)
+**Project Type Validation**
+- Fixed: Educational project type now properly validated in API
 
 ### 🎨 UI Improvements
-- Dynamic Blueprint tabs (shows only generated PRDs)
-- Progress bar uses actual count from API
-- Better icons for new PRD types (Payments, Mobile, IoT, etc.)`;
+- Resume button uses amber/orange color to distinguish from fresh generation
+- Loading state while checking existing suite status
+- Better visual hierarchy in generation button`;
+
 
 async function release() {
     if (!process.env.MONGODB_URI) {

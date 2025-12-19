@@ -69,9 +69,61 @@ export interface Blueprint {
     status: BlueprintStatus;
 }
 
-// ============ WAITLIST TYPES ============
-
 /**
  * Waitlist status enum
  */
 export type WaitlistStatus = "PENDING" | "APPROVED" | "REDEEMED";
+
+// ============ IMPLEMENTATION PROMPT TYPES (Phase 3) ============
+
+/**
+ * Implementation prompt category - strict order
+ */
+export type PromptCategory =
+    | "setup"
+    | "database"
+    | "auth"
+    | "api"
+    | "shared-components"
+    | "features"
+    | "pages"
+    | "testing";
+
+/**
+ * Implementation prompt status
+ */
+export type PromptStatus = "pending" | "unlocked" | "in_progress" | "completed" | "skipped";
+
+/**
+ * Prompt sequence status
+ */
+export type PromptSequenceStatus = "generating" | "complete" | "partial" | "error";
+
+/**
+ * Implementation prompt interface for client-side use
+ */
+export interface ImplementationPrompt {
+    id: string;
+    sequence: number;
+    category: PromptCategory;
+    title: string;
+    content: string;
+    prerequisites: string[];
+    userActions: string[];
+    acceptanceCriteria: string[];
+    status: PromptStatus;
+    completedAt?: Date;
+    estimatedTime?: string;
+}
+
+/**
+ * Prompt sequence interface for client-side use
+ */
+export interface PromptSequenceInfo {
+    id: string;
+    projectId: string;
+    status: PromptSequenceStatus;
+    totalPrompts: number;
+    completedPrompts: number;
+    currentPromptIndex: number;
+}

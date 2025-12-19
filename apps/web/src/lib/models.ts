@@ -222,8 +222,89 @@ const FeedbackSchema = new mongoose.Schema({
     browserInfo: { type: String }, // Auto-detected for bug reports
 }, { timestamps: true });
 
+
 // Index for admin queries
 FeedbackSchema.index({ status: 1, createdAt: -1 });
 
 export const Feedback = mongoose.models.Feedback ||
     mongoose.model("Feedback", FeedbackSchema);
+
+// ============ IMPLEMENTATION PROMPTS (Phase 3) ============
+
+// Individual implementation prompt for coding assistants
+const ImplementationPromptSchema = new mongoose.Schema({
+    suiteId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "BlueprintSuite",
+        required: true,
+        index: true,
+    },
+    projectId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Project",
+        required: true,
+    },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+        index: true,
+    },
+    sequence: { type: Number, required: true }, // Order in the sequence
+    category: {
+        type: String,
+        enum: ["setup", "database", "auth", "api", "shared-components", "features", "pages", "testing"],
+        required: true,
+    },
+    title: { type: String, required: true },
+    content: { type: String, required: true }, // The actual prompt markdown
+    prerequisites: [{ type: String }], // Names of prompts that must complete first
+    userActions: [{ type: String }], // Required user actions before using
+    acceptanceCriteria: [{ type: String }],
+    status: {
+        type: String,
+        enum: ["pending", "unlocked", "in_progress", "completed", "skipped"],
+        default: "pending",
+    },
+    completedAt: Date,
+    estimatedTime: String, // e.g., "15-30 mins"
+}, { timestamps: true });
+
+// Compound index for common queries
+ImplementationPromptSchema.index({ projectId: 1, sequence: 1 });
+
+// Collection of prompts for a project
+const PromptSequenceSchema = new mongoose.Schema({
+    projectId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Project",
+        required: true,
+        unique: true, // One sequence per project
+        index: true,
+    },
+    suiteId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "BlueprintSuite",
+        required: true,
+    },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+        index: true,
+    },
+    status: {
+        type: String,
+        enum: ["generating", "complete", "partial", "error"],
+        default: "generating",
+    },
+    totalPrompts: { type: Number, default: 0 },
+    completedPrompts: { type: Number, default: 0 },
+    currentPromptIndex: { type: Number, default: 0 },
+}, { timestamps: true });
+
+export const ImplementationPrompt = mongoose.models.ImplementationPrompt ||
+    mongoose.model("ImplementationPrompt", ImplementationPromptSchema);
+
+export const PromptSequence = mongoose.models.PromptSequence ||
+    mongoose.model("PromptSequence", PromptSequenceSchema);
