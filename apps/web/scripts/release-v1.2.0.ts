@@ -4,39 +4,52 @@ import { sendEmail } from './email-helper';
 import * as dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 
-const version = 'v1.5.0';
-const title = 'Blueprint Generation UX & Reliability';
-const content = `### ✨ New Features
+const version = 'v1.6.0';
+const title = 'Implementation Prompts & Enhanced Chat Experience';
+const content = `### 🚀 Major Feature: Implementation Prompts
 
-**Context-Aware Blueprint Generation**
-- Button now shows current state: "Generate Blueprints" or "Resume Generation"
-- Interrupted generation? Click "Resume" to continue FOR FREE
-- Clear info text explains what will happen before you click
-- "Uses 3 credits" for fresh generation, "No additional cost" for resume
+**AI-Powered Prompt Generation**
+- New "Implementation" tab after blueprint generation
+- Generate step-by-step coding prompts for AI assistants (Cursor, Claude)
+- Organized into 5 categories: Setup → Core → Features → Polish → Launch
+- Costs 2 credits per sequence generation
 
-**Resume Mode**
-- If generation stopped midway, pending PRDs are now detected automatically
-- Click Resume to continue from where you left off
-- No duplicate charges - existing suites are reused
+**Smart Prompt Cards**
+- One-click "Copy for Cursor" with full project context included
+- Track progress: Pending → Unlocked → In Progress → Completed
+- Skip prompts you don't need
+- Prerequisite checker shows what to complete first
 
-**Improved Pending State**
-- PRDs waiting to generate now show "Queued for generation"
-- Clear instructions: "Click Resume Generation to continue"
+**Regenerate Anytime**
+- Not happy with a prompt? Regenerate for just 0.2 credits
+- Typewriter effect while generating
+- Terminal-style prompt display
+
+### ✨ Chat Window Enhancements
+
+**Category Progress Indicator**
+- Visual progress bar in interview header
+- Four animated icons: Users → Problem → Technical → Scope
+- See which phase of interview you're in
+
+**Smart Scroll & Loading**
+- "New messages" button when you scroll up
+- Bot avatar glows during "Thinking..." state
+- Keyboard hint: "Shift+Enter for new line"
+
+### 🎨 UI Improvements
+
+**Visual Depth & Hierarchy**
+- Gradient fade overlay above input area
+- Enhanced completion banner with animated sweep
+- Sparkles ✨ effect on interview completion
 
 ### 🐛 Bug Fixes
 
-**API Key Reliability**
-- Expanded support from 3 to 10 API keys for better rate limit handling
-- Added retry logic with key rotation to streaming AI calls
-- Better recovery when hitting rate limits
+**Dock Overlap Fixed**
+- Dock no longer covers Blueprints/Implementation tabs`;
 
-**Project Type Validation**
-- Fixed: Educational project type now properly validated in API
 
-### 🎨 UI Improvements
-- Resume button uses amber/orange color to distinguish from fresh generation
-- Loading state while checking existing suite status
-- Better visual hierarchy in generation button`;
 
 
 async function release() {

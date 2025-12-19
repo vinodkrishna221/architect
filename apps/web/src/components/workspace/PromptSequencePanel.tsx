@@ -43,7 +43,7 @@ export function PromptSequencePanel({
             setIsLoading(true);
             setError(null);
 
-            const response = await fetch(`/api/ai/prompts/${projectId}`);
+            const response = await fetch(`/api/ai/prompts/by-project/${projectId}`);
             const data = await response.json();
 
             if (!response.ok) {

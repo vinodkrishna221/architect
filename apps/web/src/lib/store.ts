@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Project, MOCK_PROJECTS } from './mock-data';
+import { Project } from './mock-data';
 
 // API Project type (from MongoDB)
 export interface ApiProject {
@@ -61,7 +61,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     maxCredits: 30,
 
     openProject: (id: string) => {
-        const project = get().projects.find(p => p.id === id) || MOCK_PROJECTS.find(p => p.id === id);
+        const project = get().projects.find(p => p.id === id);
         if (!project) return;
 
         set((state) => {
@@ -113,9 +113,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
             set({ projects, isLoading: false });
         } catch (error) {
             console.error('Error fetching projects:', error);
-            // Fallback to mock data in development
+            // Show error state - no mock data fallback
             set({
-                projects: MOCK_PROJECTS,
+                projects: [],
                 isLoading: false,
                 error: error instanceof Error ? error.message : 'Failed to fetch projects'
             });
