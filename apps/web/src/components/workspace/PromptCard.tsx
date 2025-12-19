@@ -66,6 +66,7 @@ export function PromptCard({
     onStatusChange,
     onRegenerate,
     isRegenerating = false,
+    allPrompts,
 }: PromptCardProps) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [copied, setCopied] = useState(false);

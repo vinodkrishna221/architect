@@ -16,19 +16,10 @@
 import dbConnect from "@/lib/db";
 import { Waitlist } from "@/lib/models";
 
-// Credit costs
-export const CREDIT_COSTS = {
-    MESSAGE: 0.1,           // Per interview message
-    BLUEPRINT_SUITE: 3,     // Full PRD generation
-    AI_EDIT: 0.3,           // Per AI-assisted edit
-    PROJECT: 0,             // Free
-    PROMPT_SEQUENCE: 1.5,   // Full prompt sequence generation
-    PROMPT_REGENERATE: 0.2, // Single prompt regeneration
-} as const;
-
-
-// Default credits for new/beta users
-export const DEFAULT_CREDITS = 30;
+// Re-export constants for server-side usage
+// Client components should import from "@/lib/constants/credits" directly
+export { CREDIT_COSTS, DEFAULT_CREDITS } from "@/lib/constants/credits";
+import { DEFAULT_CREDITS } from "@/lib/constants/credits";
 
 interface CreditResult {
     success: boolean;

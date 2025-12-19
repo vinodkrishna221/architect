@@ -9,7 +9,7 @@ import { SequenceProgress } from "./SequenceProgress";
 import { PromptSequenceModal } from "./PromptSequenceModal";
 import type { ImplementationPrompt, PromptSequenceInfo, PromptCategory, PromptStatus } from "@/lib/types";
 import { PROMPT_CATEGORIES, CATEGORY_INFO } from "@/lib/ai/prompts/implementation-prompts";
-import { CREDIT_COSTS } from "@/lib/credits";
+import { CREDIT_COSTS } from "@/lib/constants/credits";
 
 interface PromptSequencePanelProps {
     projectId: string;
