@@ -252,8 +252,13 @@ export function PromptSequencePanel({
         );
     }
 
-    // No prompts generated yet
-    if (!sequence || prompts.length === 0) {
+    // Check if we need to show resume vs generate
+    const isStuckGenerating = sequence?.status === "generating";
+    const isPartialGeneration = sequence?.status === "partial";
+    const needsResume = isStuckGenerating || isPartialGeneration;
+
+    // No prompts generated yet OR needs resume
+    if (!sequence || prompts.length === 0 || needsResume) {
         return (
             <div className="flex flex-col h-full">
                 <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
@@ -261,19 +266,22 @@ export function PromptSequencePanel({
                         <Sparkles className="w-8 h-8 text-emerald-400" />
                     </div>
                     <h3 className="text-lg font-medium text-white mb-2">
-                        Ready for Implementation
+                        {needsResume ? "Resume Prompt Generation" : "Ready for Implementation"}
                     </h3>
                     <p className="text-sm text-white/50 max-w-sm mb-6">
-                        Your architecture is complete! Generate step-by-step prompts
-                        for AI coding assistants like Cursor or Claude.
+                        {needsResume
+                            ? `Generation was interrupted. Resume to continue generating prompts (${prompts.length} already generated).`
+                            : "Your architecture is complete! Generate step-by-step prompts for AI coding assistants like Cursor or Claude."
+                        }
                     </p>
                     <button
-                        onClick={() => setShowGenerateModal(true)}
+                        onClick={() => needsResume ? handleGenerate([]) : setShowGenerateModal(true)}
                         disabled={isGenerating}
                         className={cn(
                             "flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all",
-                            "bg-gradient-to-r from-emerald-500 to-teal-500 text-white",
-                            "hover:shadow-lg hover:shadow-emerald-500/20",
+                            needsResume
+                                ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:shadow-lg hover:shadow-amber-500/20"
+                                : "bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:shadow-lg hover:shadow-emerald-500/20",
                             isGenerating && "opacity-50 cursor-not-allowed"
                         )}
                     >
@@ -282,6 +290,11 @@ export function PromptSequencePanel({
                                 <RefreshCw className="w-4 h-4 animate-spin" />
                                 Generating...
                             </>
+                        ) : needsResume ? (
+                            <>
+                                <RefreshCw className="w-4 h-4" />
+                                Resume Generation (Free)
+                            </>
                         ) : (
                             <>
                                 <Zap className="w-4 h-4" />
@@ -289,6 +302,11 @@ export function PromptSequencePanel({
                             </>
                         )}
                     </button>
+                    {needsResume && (
+                        <p className="text-xs text-white/40 mt-3">
+                            No additional credits required - resuming from where you left off
+                        </p>
+                    )}
                 </div>
 
                 <PromptSequenceModal
