@@ -190,9 +190,12 @@ export function GenerateButton({ className }: GenerateButtonProps) {
     const hasExisting = suiteStatus?.hasExisting;
     const pendingCount = suiteStatus?.pendingCount || 0;
     const failedCount = suiteStatus?.failedCount || 0;
+    const generatingCount = suiteStatus?.generatingCount || 0;
     const completedCount = suiteStatus?.completedCount || generationProgress.completed;
-    const isResumeMode = hasExisting && (pendingCount > 0 || failedCount > 0);
-    const isAllComplete = hasExisting && pendingCount === 0 && failedCount === 0 && completedCount > 0;
+    // Resume mode: has pending, failed, OR actively generating blueprints
+    const isResumeMode = hasExisting && (pendingCount > 0 || failedCount > 0 || generatingCount > 0);
+    // Only "all complete" if no pending, failed, AND no actively generating blueprints
+    const isAllComplete = hasExisting && pendingCount === 0 && failedCount === 0 && generatingCount === 0 && completedCount > 0;
 
     // Already have all blueprints generated successfully
     if (isAllComplete && !isGenerating) {
@@ -227,9 +230,10 @@ export function GenerateButton({ className }: GenerateButtonProps) {
         }
 
         if (isResumeMode) {
+            const generatingText = generatingCount > 0 ? `${generatingCount} generating` : "";
             const pendingText = pendingCount > 0 ? `${pendingCount} pending` : "";
             const failedText = failedCount > 0 ? `${failedCount} failed` : "";
-            const resumeText = [pendingText, failedText].filter(Boolean).join(", ");
+            const resumeText = [generatingText, pendingText, failedText].filter(Boolean).join(", ");
 
             return (
                 <>

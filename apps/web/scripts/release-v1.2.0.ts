@@ -4,50 +4,33 @@ import { sendEmail } from './email-helper';
 import * as dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 
-const version = 'v1.6.0';
-const title = 'Implementation Prompts & Enhanced Chat Experience';
-const content = `### 🚀 Major Feature: Implementation Prompts
+const version = 'v1.7.0';
+const title = 'Bug Fixes: Project Data Isolation & Prompt Generation';
+const content = `### 🐛 Critical Bug Fixes
 
-**AI-Powered Prompt Generation**
-- New "Implementation" tab after blueprint generation
-- Generate step-by-step coding prompts for AI assistants (Cursor, Claude)
-- Organized into 5 categories: Setup → Core → Features → Polish → Launch
-- Costs 2 credits per sequence generation
+**Fixed: Stale Blueprints When Switching Projects**
+- Blueprints from previous projects no longer appear when creating or switching to a new project
+- Added proper store reset with project ID tracking
+- Implemented loading guard to prevent rendering stale data
+- Store now clears blueprint data properly when loading new projects
 
-**Smart Prompt Cards**
-- One-click "Copy for Cursor" with full project context included
-- Track progress: Pending → Unlocked → In Progress → Completed
-- Skip prompts you don't need
-- Prerequisite checker shows what to complete first
+**Fixed: "Blueprints Not Ready" When All Complete**
+- Prompt generation now correctly detects when all blueprints are complete
+- Previously showed "Blueprints Not Ready" even with all 7 blueprints generated
+- Now properly checks the status of each individual blueprint
 
-**Regenerate Anytime**
-- Not happy with a prompt? Regenerate for just 0.2 credits
-- Typewriter effect while generating
-- Terminal-style prompt display
+### 🔒 Security Improvements
 
-### ✨ Chat Window Enhancements
+**Enhanced Data Isolation**
+- Added additional validation when fetching blueprint data
+- Ensured blueprint suites are properly linked to user's conversation
 
-**Category Progress Indicator**
-- Visual progress bar in interview header
-- Four animated icons: Users → Problem → Technical → Scope
-- See which phase of interview you're in
+### 💡 Technical Improvements
 
-**Smart Scroll & Loading**
-- "New messages" button when you scroll up
-- Bot avatar glows during "Thinking..." state
-- Keyboard hint: "Shift+Enter for new line"
-
-### 🎨 UI Improvements
-
-**Visual Depth & Hierarchy**
-- Gradient fade overlay above input area
-- Enhanced completion banner with animated sweep
-- Sparkles ✨ effect on interview completion
-
-### 🐛 Bug Fixes
-
-**Dock Overlap Fixed**
-- Dock no longer covers Blueprints/Implementation tabs`;
+**Workspace State Management**
+- useLayoutEffect for synchronous store reset between projects
+- Computed suite status based on actual blueprint statuses
+- Better handling of empty/null blueprint data`;
 
 
 

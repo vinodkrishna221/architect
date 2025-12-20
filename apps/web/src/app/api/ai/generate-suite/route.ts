@@ -91,15 +91,16 @@ export async function POST(req: Request) {
         });
 
         if (existingSuite) {
-            // Check if there are pending/failed blueprints to resume
+            // Check if there are pending/failed/stuck-generating blueprints to resume
+            // Include "generating" status to handle cases where generation was interrupted
             const pendingBlueprints = await Blueprint.find({
                 suiteId: existingSuite._id,
-                status: { $in: ["pending", "error"] }
+                status: { $in: ["pending", "error", "generating"] }
             });
 
             if (pendingBlueprints.length > 0) {
                 // RESUME MODE: Continue generation without charging
-                console.log(`[Resume] Resuming generation for suite ${existingSuite._id} with ${pendingBlueprints.length} pending/failed blueprints`);
+                console.log(`[Resume] Resuming generation for suite ${existingSuite._id} with ${pendingBlueprints.length} pending/failed/stuck blueprints`);
 
                 // Update suite status to generating
                 existingSuite.status = "generating";
