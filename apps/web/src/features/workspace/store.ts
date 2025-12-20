@@ -194,12 +194,12 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
             })),
             questionsAsked: data.questionsAsked,
             isComplete: data.isComplete,
-            // Only update blueprint state if provided
-            ...(data.suiteId && { suiteId: data.suiteId }),
-            ...(data.blueprints && data.blueprints.length > 0 && {
-                blueprints: data.blueprints,
-                activeBlueprint: state.activeBlueprint || data.blueprints[0]?.type || null,
-            }),
+            // Always set blueprint state to prevent stale data from previous project
+            suiteId: data.suiteId || null,
+            blueprints: data.blueprints || [],
+            activeBlueprint: data.blueprints && data.blueprints.length > 0
+                ? (state.activeBlueprint || data.blueprints[0]?.type || null)
+                : null,
         })),
 
     setActiveTab: (tab) => set({ activeTab: tab }),

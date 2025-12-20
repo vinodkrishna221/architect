@@ -40,8 +40,10 @@ export async function GET(req: Request, { params }: RouteParams) {
         }
 
         // 3. Also fetch any existing blueprints for this project
+        // Use conversationId to ensure the suite belongs to this user's conversation
         const suite = await BlueprintSuite.findOne({
             projectId,
+            conversationId: conversation._id, // Security: Ensure suite is linked to user's conversation
         }).lean();
 
         let blueprints: Array<{

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { GripVertical, Maximize2, Minimize2, MessageSquare, FileText } from "lucide-react";
+import { GripVertical, Maximize2, Minimize2, MessageSquare, FileText, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Dock } from "@/components/dashboard/layout/Dock";
 import {
@@ -30,6 +30,9 @@ export default function WorkspacePage() {
     const [isMobile, setIsMobile] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
+    // Track which projectId the store has been reset for
+    const [resetForProjectId, setResetForProjectId] = useState<string | null>(null);
+
     // Workspace store state
     const { isComplete, blueprints, reset, suiteId, activeTab, setActiveTab } = useWorkspaceStore();
 
@@ -46,10 +49,13 @@ export default function WorkspacePage() {
         return () => window.removeEventListener("resize", checkMobile);
     }, []);
 
-    // Reset workspace state when project changes
-    useEffect(() => {
-        reset();
-    }, [projectId, reset]);
+    // Reset workspace state when project changes - use useLayoutEffect for immediate sync reset
+    useLayoutEffect(() => {
+        if (projectId !== resetForProjectId) {
+            reset();
+            setResetForProjectId(projectId);
+        }
+    }, [projectId, resetForProjectId, reset]);
 
     // Resize Handlers (desktop only)
     const handleMouseDown = (e: React.MouseEvent) => {
@@ -97,6 +103,28 @@ export default function WorkspacePage() {
 
     // Show blueprints panel after interview is complete and we have blueprints
     const showBlueprints = isComplete || blueprints.length > 0;
+
+    // Compute the actual suite status based on blueprint statuses
+    const computedSuiteStatus = (() => {
+        if (blueprints.length === 0) return "pending";
+        const allComplete = blueprints.every(bp => bp.status === "complete");
+        const anyError = blueprints.some(bp => bp.status === "error");
+        const anyGenerating = blueprints.some(bp => bp.status === "generating");
+
+        if (allComplete) return "complete";
+        if (anyError) return "partial";
+        if (anyGenerating) return "generating";
+        return "pending";
+    })();
+
+    // Wait for store to be reset for current project to prevent stale data
+    if (resetForProjectId !== projectId) {
+        return (
+            <div className="flex h-screen w-full bg-black items-center justify-center">
+                <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+            </div>
+        );
+    }
 
     // Mobile Layout
     if (isMobile) {
@@ -270,7 +298,7 @@ export default function WorkspacePage() {
                             <PromptSequencePanel
                                 projectId={projectId}
                                 suiteId={suiteId || ""}
-                                suiteStatus={blueprints.length > 0 ? "complete" : "pending"} // Simplified check
+                                suiteStatus={computedSuiteStatus}
                             />
                         )}
                     </div>
