@@ -51,3 +51,44 @@ body {
 @utility text-balance {
   text-wrap: balance;
 }
+
+/* Premium Animation Utilities */
+@utility animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+@utility button-glow {
+  transition: box-shadow 0.3s ease;
+  &:hover {
+    box-shadow: 0 0 25px rgba(59, 130, 246, 0.4), 0 0 10px rgba(59, 130, 246, 0.2);
+  }
+}
+
+@utility text-gradient-premium {
+  background: linear-gradient(to right, #ffffff, rgba(255, 255, 255, 0.6));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 15px rgba(59, 130, 246, 0);
+  }
+}
+
+@utility animate-pulse-glow {
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}

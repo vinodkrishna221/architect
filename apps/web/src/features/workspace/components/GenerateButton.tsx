@@ -289,16 +289,19 @@ export function GenerateButton({ className }: GenerateButtonProps) {
                 exit={{ opacity: 0, y: -20 }}
                 className={cn("space-y-2", className)}
             >
-                <button
+                <motion.button
                     onClick={handleGenerate}
                     disabled={isGenerating}
+                    whileHover={{ scale: isGenerating ? 1 : 1.02 }}
+                    whileTap={{ scale: isGenerating ? 1 : 0.98 }}
                     className={cn(
-                        "w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all duration-300",
+                        "w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all duration-300 border",
+                        isGenerating ? "border-blue-500/30 animate-pulse-glow" : "border-transparent button-glow",
                         getButtonGradient()
                     )}
                 >
                     {getButtonContent()}
-                </button>
+                </motion.button>
 
                 {/* Info Text */}
                 {getInfoText() && (

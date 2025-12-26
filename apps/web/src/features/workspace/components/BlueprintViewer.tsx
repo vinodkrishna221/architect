@@ -168,34 +168,34 @@ export function BlueprintViewer() {
         return DOMPurify.sanitize(rawHtml);
     }, [currentBlueprint?.content]);
 
-    // Empty state
+    // Empty state with premium styling
     if (blueprints.length === 0) {
         return (
-            <div className="flex flex-col h-full bg-[#0F0F0F] items-center justify-center">
+            <div className="flex flex-col h-full bg-zinc-950/50 backdrop-blur-sm items-center justify-center">
                 <div className="text-center space-y-4">
                     {isGenerating ? (
                         <>
-                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20">
-                                <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+                            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-blue-500/10 border border-blue-500/30 animate-pulse-glow">
+                                <Loader2 className="w-10 h-10 text-blue-400 animate-spin" />
                             </div>
                             <div>
-                                <p className="text-white font-medium">Generating Blueprints</p>
-                                <p className="text-white/50 text-sm mt-1">
+                                <p className="text-white font-semibold text-lg tracking-tight">Generating Blueprints</p>
+                                <p className="text-white/50 text-sm mt-2">
                                     {generationProgress.total > 0
                                         ? `${generationProgress.completed}/${generationProgress.total} complete`
-                                        : "Preparing..."
+                                        : "Preparing your technical specifications..."
                                     }
                                 </p>
                             </div>
                         </>
                     ) : (
                         <>
-                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/5 border border-white/10">
-                                <FileText className="w-8 h-8 text-white/30" />
+                            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
+                                <FileText className="w-10 h-10 text-white/30" />
                             </div>
                             <div>
-                                <p className="text-white/60">No blueprints yet</p>
-                                <p className="text-white/40 text-sm mt-1">
+                                <p className="text-white/60 font-medium">No blueprints yet</p>
+                                <p className="text-white/40 text-sm mt-2">
                                     Complete the interview to generate blueprints
                                 </p>
                             </div>
@@ -207,9 +207,9 @@ export function BlueprintViewer() {
     }
 
     return (
-        <div className="flex flex-col h-full bg-[#0F0F0F] relative overflow-hidden">
-            {/* Header with Tabs */}
-            <div className="border-b border-white/5 bg-black/20 backdrop-blur-sm shrink-0">
+        <div className="flex flex-col h-full bg-zinc-950/50 backdrop-blur-sm relative overflow-hidden">
+            {/* Header with Tabs - Premium Glass */}
+            <div className="border-b border-white/10 bg-black/40 backdrop-blur-md shrink-0">
                 {/* Progress indicator during generation */}
                 {isGenerating && (
                     <div className="px-4 py-2 border-b border-white/5 flex items-center gap-2 text-sm text-blue-400">
@@ -222,27 +222,37 @@ export function BlueprintViewer() {
                     </div>
                 )}
 
-                {/* Tab Bar - Dynamic based on actual blueprints */}
-                <div className="flex overflow-x-auto scrollbar-hide">
-                    {sortedBlueprints.map((bp) => {
+                {/* Tab Bar - Premium with Animated Indicator */}
+                <div className="flex overflow-x-auto scrollbar-hide border-b border-white/5">
+                    {sortedBlueprints.map((bp, index) => {
                         const isActive = activeBlueprint === bp.type;
                         const Icon = getIconForType(bp.type);
 
                         return (
-                            <button
+                            <motion.button
                                 key={bp.id}
                                 onClick={() => setActiveBlueprint(bp.type)}
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.05, duration: 0.3 }}
                                 className={cn(
-                                    "flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-all duration-200 border-b-2",
+                                    "relative flex items-center gap-2 px-5 py-3.5 text-sm font-medium whitespace-nowrap transition-all duration-300",
                                     isActive
-                                        ? "border-blue-500 text-white bg-white/5"
-                                        : "border-transparent text-white/50 hover:text-white/70 hover:bg-white/5"
+                                        ? "text-white"
+                                        : "text-white/50 hover:text-white/70 hover:bg-white/5"
                                 )}
                             >
+                                {isActive && (
+                                    <motion.div
+                                        layoutId="blueprintTabIndicator"
+                                        className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-blue-500 to-cyan-500"
+                                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                                    />
+                                )}
                                 <Icon className="w-4 h-4" />
                                 <span>{getTitleForType(bp.type)}</span>
                                 <StatusIcon status={bp.status} />
-                            </button>
+                            </motion.button>
                         );
                     })}
                 </div>

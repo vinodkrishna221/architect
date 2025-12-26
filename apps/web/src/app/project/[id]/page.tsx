@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { useParams } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { GripVertical, Maximize2, Minimize2, MessageSquare, FileText, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Dock } from "@/components/dashboard/layout/Dock";
@@ -199,18 +199,21 @@ export default function WorkspacePage() {
                 isDragging ? "cursor-col-resize select-none" : ""
             )}
         >
-            {/* Left Panel - Chat */}
+            {/* Premium Background Effects */}
+            <div className="fixed inset-0 bg-grid-pattern pointer-events-none opacity-40" />
+            <div className="fixed inset-0 bg-noise pointer-events-none opacity-30" />
+            {/* Left Panel - Chat with Glass Morphism */}
             <motion.div
                 initial={false}
                 animate={{ width: styles.left, opacity: styles.left === "0%" ? 0 : 1 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="h-full border-r border-white/5 z-10 relative overflow-hidden flex flex-col"
+                className="h-full border-r border-white/10 z-10 relative overflow-hidden flex flex-col bg-zinc-900/30 backdrop-blur-sm"
             >
                 {/* Maximize/Minimize Button */}
                 <div className="absolute top-4 right-4 z-50">
                     <button
                         onClick={() => setFocusMode(focusMode === "chat" ? "split" : "chat")}
-                        className="p-2 bg-black/50 backdrop-blur text-white/40 hover:text-white rounded-lg transition-colors"
+                        className="p-2 bg-black/60 backdrop-blur-md text-white/40 hover:text-white hover:bg-white/10 rounded-lg transition-all border border-white/5 button-glow"
                     >
                         {focusMode === "chat" ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                     </button>
@@ -248,43 +251,57 @@ export default function WorkspacePage() {
                     initial={false}
                     animate={{ width: styles.right, opacity: styles.right === "0%" ? 0 : 1 }}
                     transition={{ duration: 0.3, ease: "easeInOut" }}
-                    className="h-full bg-[#0F0F0F] relative overflow-hidden"
+                    className="h-full bg-zinc-950/80 backdrop-blur-xl relative overflow-hidden border-l border-white/5"
                 >
                     {/* Maximize/Minimize Button */}
-                    {/* Header Bar with Tabs and Actions */}
-                    <div className="flex items-center justify-between p-2 border-b border-white/5 bg-black/20">
-                        {/* Tabs */}
-                        <div className="flex items-center bg-black/40 rounded-lg p-1 border border-white/5">
+                    {/* Header Bar with Tabs and Actions - Premium Glass */}
+                    <div className="flex items-center justify-between p-3 border-b border-white/10 bg-black/40 backdrop-blur-md">
+                        {/* Tabs with Animated Indicator */}
+                        <div className="flex items-center bg-black/60 rounded-xl p-1.5 border border-white/10 shadow-lg">
                             <button
                                 onClick={() => setActiveTab("blueprints")}
                                 className={cn(
-                                    "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+                                    "relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300",
                                     activeTab === "blueprints"
-                                        ? "bg-white/10 text-white shadow-sm"
-                                        : "text-white/40 hover:text-white/60"
+                                        ? "text-white"
+                                        : "text-white/40 hover:text-white/70"
                                 )}
                             >
-                                <FileCode className="w-3.5 h-3.5" />
-                                Blueprints
+                                {activeTab === "blueprints" && (
+                                    <motion.div
+                                        layoutId="activeTabIndicator"
+                                        className="absolute inset-0 bg-white/10 rounded-lg border border-white/10"
+                                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                                    />
+                                )}
+                                <FileCode className="w-4 h-4 relative z-10" />
+                                <span className="relative z-10">Blueprints</span>
                             </button>
                             <button
                                 onClick={() => setActiveTab("prompts")}
                                 className={cn(
-                                    "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+                                    "relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300",
                                     activeTab === "prompts"
-                                        ? "bg-emerald-500/20 text-emerald-400 shadow-sm border border-emerald-500/20"
-                                        : "text-white/40 hover:text-white/60"
+                                        ? "text-emerald-400"
+                                        : "text-white/40 hover:text-white/70"
                                 )}
                             >
-                                <Terminal className="w-3.5 h-3.5" />
-                                Implementation
+                                {activeTab === "prompts" && (
+                                    <motion.div
+                                        layoutId="activeTabIndicator"
+                                        className="absolute inset-0 bg-emerald-500/20 rounded-lg border border-emerald-500/30"
+                                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                                    />
+                                )}
+                                <Terminal className="w-4 h-4 relative z-10" />
+                                <span className="relative z-10">Implementation</span>
                             </button>
                         </div>
 
-                        {/* Actions */}
+                        {/* Actions with Premium Styling */}
                         <button
                             onClick={() => setFocusMode(focusMode === "blueprint" ? "split" : "blueprint")}
-                            className="p-1.5 hover:bg-white/5 text-white/40 hover:text-white rounded-lg transition-colors"
+                            className="p-2 bg-black/40 hover:bg-white/10 text-white/40 hover:text-white rounded-lg transition-all border border-white/5 button-glow"
                         >
                             {focusMode === "blueprint" ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                         </button>
